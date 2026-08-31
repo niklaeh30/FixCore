@@ -1366,44 +1366,44 @@
 
   var TOOLS = [
     { id:'scan', icon:'scan', title:'PC Scan', desc:"A full system sweep in under a minute.", type:'scan', action:'Run scan',
-      steps:['Checking CPU temperature','Checking disk health','Checking startup programs','Checking RAM usage','Checking driver versions'],
+      steps:['Checking memory usage','Checking CPU load','Checking disk space','Checking system tools'],
       result:'Scan complete — no critical issues found.' },
-    { id:'general', icon:'info', title:'General Tweaks', desc:'Everyday settings that make Windows feel snappier.', type:'toggles', items:[
-      {label:'Disable visual effects'},{label:'High performance power plan'},{label:'Disable background apps'},{label:'Enable dark mode system-wide'}
+    { id:'general', icon:'info', title:'General Tweaks', desc:'Everyday Windows settings you can flip individually — each one reversible.', type:'toggles', items:[
+      {label:'Disable Notifications'},{label:'Disable Animations'},{label:'Disable Background Apps'},{label:'Disable Search Indexing'}
     ], action:'Apply changes', result:'Tweaks applied.' },
-    { id:'fixrepair', icon:'fix', title:'Fix & Repair', desc:'Resolves common Windows problems automatically.', type:'scan', action:'Run repair',
-      steps:['Scanning system files','Repairing registry entries','Fixing broken shortcuts','Clearing corrupt cache'],
-      result:'Repair complete — 3 issues fixed.' },
-    { id:'perf', icon:'perf', title:'Performance', desc:'Ongoing monitoring of CPU, GPU, RAM and disk.', type:'scan', action:'Run benchmark',
-      steps:['Benchmarking CPU','Benchmarking GPU','Measuring disk read/write speed','Calculating performance score'],
-      result:'Benchmark complete — score 8,420.' },
-    { id:'bios', icon:'bios', title:'BIOS Optimization', desc:'Safe, reversible BIOS-level tuning for stability and speed.', type:'toggles', items:[
-      {label:'Enable XMP / DOCP profile'},{label:'Disable Fast Boot'},{label:'Enable Above 4G Decoding'},{label:'Set PCIe to Gen 4'}
-    ], action:'Apply changes', result:'BIOS profile updated.' },
-    { id:'graphics', icon:'gpu', title:'Graphics Tweaks', desc:'GPU driver and rendering settings tuned for clarity and speed.', type:'toggles', items:[
-      {label:'Prefer maximum performance'},{label:'Disable global V-Sync'},{label:'Enable GPU scheduling'},{label:'Optimize texture filtering'}
+    { id:'fixrepair', icon:'fix', title:'Fix & Repair', desc:'One-click fixes for the everyday Windows annoyances.', type:'scan', action:'Run repair',
+      steps:['Clearing temporary files','Emptying Recycle Bin','Flushing DNS cache','Opening Disk Cleanup'],
+      result:'Repair complete — temp files cleared, DNS cache flushed.' },
+    { id:'perf', icon:'perf', title:'Performance', desc:'Live CPU, GPU, RAM and disk monitoring, right on the Home page.', type:'scan', action:'Start monitoring',
+      steps:['Reading CPU usage','Reading GPU usage','Reading RAM usage','Reading disk activity'],
+      result:'Live monitoring active — updates every couple of seconds.' },
+    { id:'bios', icon:'bios', title:'BIOS Optimization', desc:'Reads your firmware settings and tells you exactly what to change — BIOS changes are hardware-specific, so FixCore won\'t touch them for you.', type:'scan', action:'Read firmware settings',
+      steps:['Reading CPU features (SMT, CPPC)','Reading memory profile (XMP/EXPO)','Checking virtualization settings','Checking DEP / NX setting'],
+      result:'Recommendations ready — exact values to set in your BIOS are shown in the app.' },
+    { id:'graphics', icon:'gpu', title:'Graphics Tweaks', desc:'NVIDIA driver settings tuned for performance, applied and reverted per setting.', type:'toggles', items:[
+      {label:'Prefer maximum performance'},{label:'Disable V-Sync'},{label:'Enable threaded optimization'},{label:'Unlimited shader cache'}
     ], action:'Apply changes', result:'Graphics settings applied.' },
-    { id:'gameboost', icon:'boost', title:'Game Boost', desc:'Frees up CPU and RAM the moment you launch a game.', type:'toggles', items:[
-      {label:'Free RAM on game launch'},{label:'Suspend background updaters'},{label:'Prioritize game process'},{label:'Mute notifications during play'}
+    { id:'gameboost', icon:'boost', title:'Game Boost', desc:'One-tap toggles for Game Mode, power plan and background app load before you play.', type:'toggles', items:[
+      {label:'Enable Windows Game Mode'},{label:'High Performance power plan'},{label:'Disable Xbox Game Bar / Game DVR'},{label:'Suspend background app priority'}
     ], action:'Enable boost', result:'Game Boost enabled.' },
-    { id:'library', icon:'library', title:'Game Library', desc:'Per-game optimization profiles.', type:'list', items:[
-      {label:'Counter-Strike 2'},{label:'Valorant'},{label:'Elden Ring'},{label:'Minecraft'}
+    { id:'library', icon:'library', title:'Game Library', desc:'Detects installed games and lets you mark them optimized.', type:'list', items:[
+      {label:'Counter-Strike 2'},{label:'Valorant'},{label:'Fortnite'},{label:'Minecraft'}
     ], action:'Optimize all', result:'All games optimized.' },
-    { id:'network', icon:'net', title:'Networking', desc:'Lower latency and steadier connections.', type:'toggles', items:[
-      {label:'Optimize DNS for gaming'},{label:'Disable network throttling'},{label:'Enable QoS packet priority'},{label:'Reset TCP/IP stack'}
+    { id:'network', icon:'net', title:'Networking', desc:'Lower latency and steadier connections, per toggle — all reversible.', type:'toggles', items:[
+      {label:'Disable Nagle\'s Algorithm'},{label:'Optimize TCP Settings'},{label:'Optimize Network Adapters'},{label:'Use Cloudflare DNS (1.1.1.1)'}
     ], action:'Apply changes', result:'Network optimized.' },
-    { id:'startup', icon:'startup', title:'Startup Apps', desc:'Control what launches when Windows boots.', type:'list', items:[
+    { id:'startup', icon:'startup', title:'Startup Apps', desc:'Control what launches when Windows boots — disable and re-enable anytime.', type:'list', items:[
       {label:'Steam'},{label:'Discord'},{label:'Spotify'},{label:'OneDrive'}
     ], action:'Apply changes', result:'Startup list updated.' },
-    { id:'debloat', icon:'debloat', title:'Debloating', desc:'Removes pre-installed bloatware and background telemetry.', type:'toggles', items:[
-      {label:'Remove Xbox Game Bar'},{label:'Remove pre-installed apps'},{label:'Disable telemetry services'},{label:'Remove Cortana'}
+    { id:'debloat', icon:'debloat', title:'Debloating', desc:'Finds pre-installed Windows apps that are safe to remove.', type:'toggles', items:[
+      {label:'Remove Microsoft 3D Viewer'},{label:'Remove Mixed Reality Portal'},{label:'Remove Xbox Game Bar'},{label:'Remove pre-installed Store apps'}
     ], action:'Apply changes', result:'System debloated.' },
-    { id:'restore', icon:'restore', title:'System Restore', desc:'Create and manage safe rollback points.', type:'scan', action:'Create restore point',
+    { id:'restore', icon:'restore', title:'System Restore', desc:'Create and manage Windows System Restore points before you tweak anything.', type:'scan', action:'Create restore point',
       steps:['Snapshotting system files','Saving registry state','Indexing installed drivers','Finalizing restore point'],
       result:'Restore point created.' },
-    { id:'safe', icon:'safe', title:'Safe & Secure', desc:'Every fix is reversible, every scan runs locally first.', type:'scan', action:'Run security check',
-      steps:['Scanning for malware signatures','Checking firewall rules','Verifying Windows Defender status','Checking startup entries'],
-      result:'No threats detected.' }
+    { id:'safe', icon:'safe', title:'Safe & Secure', desc:'Every tweak that\'s wired up only touches official, reversible Windows settings — nothing installs drivers or changes BIOS/UEFI.', type:'scan', action:'Run security check',
+      steps:['Confirming no drivers are modified','Confirming no BIOS/UEFI settings are touched','Confirming every applied tweak is reversible','Checking admin rights where needed'],
+      result:'All checks passed — FixCore only touches documented, reversible Windows settings.' }
   ];
 
   var toolGrid = document.getElementById('toolGrid');
