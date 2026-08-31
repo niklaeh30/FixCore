@@ -1328,11 +1328,9 @@
       showToast('Sign in with Discord to finish checkout.');
       return;
     }
-    var plans = cart.map(function(i){ return i.plan; }).join(' + ');
-    cart = [];
-    renderCart();
-    closeCart();
-    showToast('Order placed — ' + plans + ' activated on ' + currentUser.tag + '.');
+    // Send the customer to the real Stripe checkout page.
+    // Stripe handles the payment and redirects to the success page itself.
+    window.location.href = 'https://buy.stripe.com/cNi5kEfah07c9cD9z63VC01';
   });
 
   renderCart();

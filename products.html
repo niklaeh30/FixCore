@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FixCore — Products</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#04060d;
+    --void-2:#070b16;
+    --panel:#0b1122;
+    --panel-2:#0e1526;
+    --border:rgba(90,170,255,0.16);
+    --border-strong:rgba(90,170,255,0.32);
+    --ice:#eef4ff;
+    --sub:#8ea0c2;
+    --sub-dim:#5d6d8c;
+    --blue:#2f8fff;
+    --blue-bright:#5fb2ff;
+    --blue-deep:#0a3d91;
+    --glow:#4fc3ff;
+    --danger:#ff6b6b;
+    --ok:#3ee08a;
+    --radius:14px;
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'JetBrains Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--void);
+    color:var(--ice);
+    font-family:var(--font-body);
+    line-height:1.6;
+    overflow-x:hidden;
+  }
+  a{color:var(--blue-bright);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  ul{list-style:none;}
+  button{font-family:inherit;cursor:pointer;border:none;color:inherit;background:none;}
+  img,svg{display:block;}
+  :focus-visible{outline:2px solid var(--blue-bright);outline-offset:3px;border-radius:4px;}
+
+  .wrap{max-width:1000px;margin:0 auto;padding:0 32px;}
+
+  .bg-glow{
+    position:fixed;inset:0;z-index:-2;
+    background:
+      radial-gradient(60% 40% at 50% 0%, rgba(47,143,255,0.16), transparent 60%),
+      radial-gradient(40% 30% at 85% 15%, rgba(79,195,255,0.10), transparent 60%),
+      var(--void);
+  }
+  .bg-grid{
+    position:fixed;inset:0;z-index:-1;opacity:0.35;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(90,170,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(90,170,255,0.05) 1px, transparent 1px);
+    background-size:44px 44px;
+    mask-image:radial-gradient(70% 60% at 50% 20%, black, transparent);
+  }
+
+  header{
+    position:sticky;top:0;z-index:100;
+    background:rgba(4,6,13,0.72);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--border);
+  }
+  nav{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 32px;max-width:1180px;margin:0 auto;
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:0.3px;}
+  .brand .core{color:var(--blue-bright);}
+  .nav-links{display:flex;gap:32px;align-items:center;}
+  .nav-links a{font-size:14px;color:var(--sub);font-weight:500;transition:color .2s;text-decoration:none;}
+  .nav-links a:hover{color:var(--ice);text-decoration:none;}
+
+  main{padding:72px 0 100px;}
+
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--font-mono);font-size:12px;letter-spacing:0.08em;color:var(--blue-bright);
+    border:1px solid var(--border);padding:6px 12px;border-radius:99px;margin-bottom:22px;
+    background:rgba(47,143,255,0.06);
+  }
+  .section-head{text-align:center;max-width:600px;margin:0 auto 50px;}
+  h1{
+    font-family:var(--font-display);font-weight:700;
+    font-size:clamp(30px,4vw,44px);line-height:1.1;letter-spacing:-0.02em;
+    margin-bottom:14px;
+  }
+  .section-head p{color:var(--sub);font-size:16px;}
+
+  .product-card{
+    background:linear-gradient(180deg, rgba(47,143,255,0.06), var(--panel));
+    border:1px solid var(--border-strong);
+    border-radius:20px;
+    padding:44px;
+    max-width:640px;
+    margin:0 auto;
+    box-shadow:0 20px 60px rgba(0,0,0,0.4);
+  }
+  .product-tag{
+    display:inline-block;font-family:var(--font-mono);font-size:11px;letter-spacing:0.08em;
+    color:var(--blue-bright);background:rgba(47,143,255,0.12);border:1px solid var(--border);
+    padding:4px 10px;border-radius:99px;margin-bottom:18px;
+  }
+  .product-card h2{font-family:var(--font-display);font-size:28px;font-weight:700;margin-bottom:6px;}
+  .product-price{font-family:var(--font-display);font-size:48px;font-weight:700;color:var(--ice);margin:14px 0 4px;}
+  .product-price-meta{font-size:13px;color:var(--sub-dim);margin-bottom:20px;}
+  .product-desc{color:var(--sub);margin-bottom:28px;}
+
+  .feature-list{margin-bottom:32px;}
+  .feature-list li{
+    display:flex;align-items:flex-start;gap:12px;padding:9px 0;
+    border-bottom:1px solid rgba(90,170,255,0.08);
+  }
+  .feature-list li:last-child{border-bottom:none;}
+  .feature-list svg{flex-shrink:0;width:18px;height:18px;stroke:var(--ok);margin-top:2px;}
+  .feature-list .li-title{display:block;font-weight:600;font-size:14.5px;color:var(--ice);}
+  .feature-list .li-sub{display:block;font-size:13px;color:var(--sub-dim);}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    font-family:var(--font-body);font-weight:600;font-size:15px;
+    padding:15px 28px;border-radius:10px;cursor:pointer;transition:transform .15s, box-shadow .15s;
+    width:100%;text-decoration:none;
+  }
+  .btn-primary{
+    background:linear-gradient(180deg, var(--blue-bright), var(--blue));
+    color:#04060d;
+    box-shadow:0 8px 24px rgba(47,143,255,0.35);
+  }
+  .btn-primary:hover{transform:translateY(-1px);text-decoration:none;}
+  .product-footnote{text-align:center;font-size:12.5px;color:var(--sub-dim);margin-top:16px;}
+
+  footer{border-top:1px solid var(--border);padding:36px 0;margin-top:60px;}
+  .footer-bottom{
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:12.5px;color:var(--sub-dim);flex-wrap:wrap;gap:12px;
+  }
+
+  @media (max-width:640px){
+    .nav-links{display:none;}
+    .wrap{padding:0 20px;}
+    .product-card{padding:30px 22px;}
+  }
+</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="bg-grid"></div>
+
+<header>
+  <nav>
+    <a class="brand" href="index.html" style="text-decoration:none;">
+      FIX<span class="core">CORE</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="index.html#pricing">Pricing</a></li>
+      <li><a href="download.html">Download</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">PRODUCTS</span>
+      <h1>Get FixCore</h1>
+      <p>One license, the full toolkit. No subscription, no recurring fees.</p>
+    </div>
+
+    <div class="product-card">
+      <span class="product-tag">EXCLUSIVE</span>
+      <h2>FixCore 2.1</h2>
+      <div class="product-price">$25</div>
+      <div class="product-price-meta">One-time payment · Lifetime license · Instant download</div>
+      <p class="product-desc">The full FixCore toolkit, unlocked forever with a single purchase — no subscription, no recurring fees.</p>
+
+      <ul class="feature-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">PC Scan</span><span class="li-sub">Full system sweep that flags issues in under a minute</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">General Tweaks</span><span class="li-sub">Everyday settings that make Windows feel snappier</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Fix &amp; Repair</span><span class="li-sub">Resolves common Windows problems automatically</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Performance monitoring</span><span class="li-sub">Tracks CPU, GPU, RAM and disk over time</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">BIOS Optimization</span><span class="li-sub">Safe, reversible BIOS-level tuning for stability and speed</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Graphics Tweaks</span><span class="li-sub">GPU driver and rendering settings tuned for speed</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Game Boost</span><span class="li-sub">Frees up CPU and RAM the moment you launch a game</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Game Library</span><span class="li-sub">Per-game optimization profiles, applied automatically</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Networking</span><span class="li-sub">Lower latency and steadier connections</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Startup Apps</span><span class="li-sub">Control what launches when Windows boots</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Debloating</span><span class="li-sub">Removes pre-installed bloatware and background telemetry</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">System Restore</span><span class="li-sub">Create and manage safe rollback points</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Free updates</span><span class="li-sub">Every update to this version, at no extra cost</span></div></li>
+      </ul>
+
+      <a class="btn btn-primary" href="https://buy.stripe.com/cNi5kEfah07c9cD9z63VC01">Buy FixCore 2.1 — $25</a>
+      <p class="product-footnote">Windows 10 &amp; 11 · 64-bit · After payment you'll get a product key to redeem in Discord.</p>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-bottom">
+      <span>© 2026 FixCore. All rights reserved.</span>
+      <span><a href="index.html">Back to home</a></span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
