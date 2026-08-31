@@ -82,6 +82,16 @@
   .nav-links{display:flex;gap:32px;align-items:center;}
   .nav-links a{font-size:14px;color:var(--sub);font-weight:500;transition:color .2s;}
   .nav-links a:hover{color:var(--ice);}
+  .nav-soon{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:14px;color:var(--sub-dim);font-weight:500;
+    cursor:default;user-select:none;
+  }
+  .nav-soon .soon-badge{
+    font-family:var(--font-mono);font-size:9.5px;letter-spacing:0.04em;
+    background:rgba(255,255,255,0.08);color:var(--sub);
+    padding:2px 6px;border-radius:99px;
+  }
   .nav-actions{display:flex;align-items:center;gap:14px;}
   .btn{
     font-family:var(--font-body);font-weight:600;font-size:14px;
@@ -306,6 +316,7 @@
     }
     .nav-links.open{transform:translateY(0);opacity:1;pointer-events:auto;}
     .nav-links a{width:100%;padding:14px 4px;border-bottom:1px solid var(--border);}
+    .nav-links .nav-soon{width:100%;padding:14px 4px;border-bottom:1px solid var(--border);}
     .hamburger{display:block;}
     .feature-grid{grid-template-columns:1fr;}
     .band .wrap{grid-template-columns:1fr 1fr;padding:40px 20px;}
@@ -606,6 +617,7 @@
       <li><a href="#how-it-works">How it works</a></li>
       <li><a href="#wallpapers">Wallpapers</a></li>
       <li><a href="#pricing">Pricing</a></li>
+      <li><a href="products.html">Products</a></li>
       <li><a href="#faq">FAQ</a></li>
       <li><a href="download.html">Download</a></li>
       <li id="dashNavLink" style="display:none;"><a href="#dashboard">Dashboard</a></li>
