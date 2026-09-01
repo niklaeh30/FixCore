@@ -1177,7 +1177,7 @@
     });
   })();
 
-  // ---------- state (in-memory only, no persistence) ----------
+  // ---------- state (persisted to localStorage, see below) ----------
   var currentUser = null;   // {username, tag, avatarUrl}
   var DISCORD_SESSION_KEY = 'fixcore_discord_user';
   // Restore a previous Discord sign-in so refreshing the page doesn't log
