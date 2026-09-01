@@ -1179,6 +1179,14 @@
 
   // ---------- state (in-memory only, no persistence) ----------
   var currentUser = null;   // {username, tag, avatarUrl}
+  var DISCORD_SESSION_KEY = 'fixcore_discord_user';
+  // Restore a previous Discord sign-in so refreshing the page doesn't log
+  // the person out — only the small profile object below is stored, never
+  // the Discord access token itself.
+  try {
+    var savedUser = localStorage.getItem(DISCORD_SESSION_KEY);
+    if (savedUser) currentUser = JSON.parse(savedUser);
+  } catch (e) { /* localStorage unavailable or corrupted entry — just stay signed out */ }
   var cart = [];             // {plan, price}
 
   var DISCORD_CLIENT_ID = '1539670021532422154';
@@ -1287,6 +1295,7 @@
           tag: '@' + user.username,
           avatarUrl: avatarUrl
         };
+        try { localStorage.setItem(DISCORD_SESSION_KEY, JSON.stringify(currentUser)); } catch (e) { /* ignore */ }
         renderAuthNav();
         renderDashboard();
         renderCtas();
@@ -1325,6 +1334,7 @@
         '<button class="btn btn-text" id="logoutBtn">Log out</button>';
       document.getElementById('logoutBtn').addEventListener('click', function(){
         currentUser = null;
+        try { localStorage.removeItem(DISCORD_SESSION_KEY); } catch (e) { /* ignore */ }
         renderAuthNav();
         renderDashboard();
         renderCtas();
