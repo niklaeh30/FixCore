@@ -173,6 +173,46 @@
   .scan-footer .result b{color:var(--ok);}
   .mini-btn{font-family:var(--font-mono);font-size:11px;color:var(--blue-bright);border:1px solid var(--border-strong);padding:6px 12px;border-radius:7px;background:rgba(47,143,255,0.08);}
 
+  /* hero app-window preview (real screenshots, click-through thumbnails) */
+  .app-preview{position:relative;}
+  .app-preview-topbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .app-preview-badge{
+    font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--ice);
+    background:linear-gradient(135deg, var(--blue-bright), var(--blue-deep));
+    border-radius:99px;padding:4px 11px;
+  }
+  .app-preview-name{font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--sub);}
+  .app-preview-window{
+    position:relative;border:1px solid var(--border);border-radius:14px;overflow:hidden;
+    background:var(--panel);box-shadow:0 30px 60px -30px rgba(0,0,0,0.75);
+  }
+  .app-preview-window img{display:block;width:100%;height:auto;}
+  .app-preview-next{
+    position:absolute;top:50%;right:-18px;transform:translateY(-50%);
+    width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    background:var(--void);border:1px solid var(--border-strong);color:var(--blue-bright);
+    cursor:pointer;transition:background .15s ease,border-color .15s ease;
+  }
+  .app-preview-next:hover{background:var(--panel-2);border-color:var(--blue-bright);}
+  .app-preview-next svg{width:16px;height:16px;}
+  .app-preview-thumbs{display:flex;gap:8px;margin-top:14px;overflow-x:auto;padding-bottom:2px;}
+  .app-preview-thumb{
+    flex:0 0 auto;width:92px;border-radius:8px;overflow:hidden;border:1.5px solid var(--border);
+    background:var(--panel);cursor:pointer;transition:border-color .15s ease;
+  }
+  .app-preview-thumb img{display:block;width:100%;height:48px;object-fit:cover;object-position:top;opacity:0.75;}
+  .app-preview-thumb span{
+    display:block;font-family:var(--font-mono);font-size:9.5px;color:var(--sub-dim);
+    padding:4px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .app-preview-thumb:hover{border-color:var(--border-strong);}
+  .app-preview-thumb.active{border-color:var(--blue-bright);}
+  .app-preview-thumb.active img{opacity:1;}
+  .app-preview-thumb.active span{color:var(--ice);}
+  @media (max-width:720px){
+    .app-preview-next{right:8px;}
+  }
+
   /* ---------- section shared ---------- */
   section{padding:88px 0;position:relative;}
   .section-head{max-width:600px;margin:0 auto 52px;text-align:center;}
@@ -524,6 +564,24 @@
     background:rgba(255,180,84,0.1);border:1px solid rgba(255,180,84,0.3);padding:3px 8px;border-radius:99px;
   }
 
+  /* real app screenshot viewer */
+  .screenshot-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .screenshot-tab{
+    font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--sub);
+    background:var(--panel);border:1px solid var(--border);border-radius:99px;padding:9px 18px;
+    cursor:pointer;transition:color .15s ease,border-color .15s ease,background .15s ease;
+  }
+  .screenshot-tab:hover{color:var(--ice);border-color:var(--border-strong);}
+  .screenshot-tab.active{
+    color:var(--ice);background:rgba(47,143,255,0.12);border-color:var(--blue-bright);
+  }
+  .screenshot-caption{color:var(--sub-dim);font-size:13px;margin-bottom:20px;}
+  .screenshot-frame{
+    border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--panel);
+    box-shadow:0 20px 60px rgba(0,0,0,0.35);
+  }
+  .screenshot-frame img{display:block;width:100%;height:auto;}
+
   /* ---------- tool modal ---------- */
   .tool-modal .modal{max-width:460px;}
   .tool-head{display:flex;gap:14px;align-items:flex-start;margin-bottom:22px;}
@@ -657,21 +715,33 @@
         </div>
       </div>
 
-      <div class="scan-panel">
-        <div class="scan-head">
-          <span class="title">SYSTEM_SCAN.LOG</span>
-          <span class="live"><span class="dot"></span>LIVE</span>
+      <div class="app-preview">
+        <div class="app-preview-topbar">
+          <span class="app-preview-badge">2.1</span>
+          <span class="app-preview-name">FixCore</span>
         </div>
-        <div class="scan-rows">
-          <div class="scan-row"><span class="label">CPU Temperature</span><span class="val">54°C</span></div>
-          <div class="scan-row"><span class="label">Disk Health</span><span class="val" style="display:flex;align-items:center;gap:10px;">Good <span class="bar-track"><span class="bar-fill" style="width:86%"></span></span></span></div>
-          <div class="scan-row"><span class="label">Startup Programs</span><span class="val warn">19 flagged</span></div>
-          <div class="scan-row"><span class="label">RAM Usage</span><span class="val" style="display:flex;align-items:center;gap:10px;">62% <span class="bar-track"><span class="bar-fill" style="width:62%"></span></span></span></div>
-          <div class="scan-row"><span class="label">Driver Updates</span><span class="val warn">3 outdated</span></div>
+        <div class="app-preview-window">
+          <img id="heroPreviewImg" src="fixcore-general-tweaks.png" alt="FixCore 2.1 — General Tweaks page">
+          <button class="app-preview-next" id="heroPreviewNext" type="button" aria-label="Show next screenshot">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
         </div>
-        <div class="scan-footer">
-          <span class="result">Scan complete — <b>5 issues found</b></span>
-          <button class="mini-btn" id="panelFix">Fix now →</button>
+        <div class="app-preview-thumbs" id="heroPreviewThumbs">
+          <button class="app-preview-thumb active" data-target="general-tweaks">
+            <img src="fixcore-general-tweaks.png" alt=""><span>General Tweaks</span>
+          </button>
+          <button class="app-preview-thumb" data-target="fix-repair">
+            <img src="fixcore-fix-repair.png" alt=""><span>Fix &amp; Repair</span>
+          </button>
+          <button class="app-preview-thumb" data-target="bios-optimization">
+            <img src="fixcore-bios-optimization.png" alt=""><span>BIOS Optimization</span>
+          </button>
+          <button class="app-preview-thumb" data-target="game-boost">
+            <img src="fixcore-game-boost.png" alt=""><span>Game Boost</span>
+          </button>
+          <button class="app-preview-thumb" data-target="game-library">
+            <img src="fixcore-game-library.png" alt=""><span>Game Library</span>
+          </button>
         </div>
       </div>
     </div>
@@ -839,7 +909,18 @@
         </div>
         <div class="dash-status"><span class="dot"></span>SYSTEM MONITORED</div>
       </div>
-      <div class="tool-grid" id="toolGrid"></div>
+
+      <div class="screenshot-tabs" id="screenshotTabs">
+        <button class="screenshot-tab active" data-target="general-tweaks">General Tweaks</button>
+        <button class="screenshot-tab" data-target="fix-repair">Fix &amp; Repair</button>
+        <button class="screenshot-tab" data-target="bios-optimization">BIOS Optimization</button>
+        <button class="screenshot-tab" data-target="game-boost">Game Boost</button>
+        <button class="screenshot-tab" data-target="game-library">Game Library</button>
+      </div>
+      <p class="screenshot-caption">Real screenshots from FixCore 2.1 — no mockups, this is what you'll actually see.</p>
+      <div class="screenshot-frame">
+        <img id="screenshotImg" src="fixcore-general-tweaks.png" alt="FixCore 2.1 — General Tweaks page">
+      </div>
     </div>
   </section>
 
@@ -1060,31 +1141,31 @@
 </div>
 
 <!-- TOOL MODAL -->
-<div class="modal-overlay tool-modal" id="toolOverlay">
-  <div class="modal">
-    <button class="modal-close" id="toolClose">✕</button>
-    <div class="tool-head">
-      <div class="icon-badge" id="toolIcon"></div>
-      <div>
-        <h2 id="toolTitle">Tool</h2>
-        <p id="toolDesc">Description</p>
-      </div>
-    </div>
-    <div id="toolBody"></div>
-    <div class="tool-progress" id="toolProgress">
-      <div class="label"><span>Working…</span><span id="toolProgressPct">0%</span></div>
-      <div class="bar-track"><div class="bar-fill" id="toolProgressBar" style="width:0%"></div></div>
-    </div>
-    <div class="tool-result" id="toolResult">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-      <span id="toolResultText">Done.</span>
-    </div>
-  </div>
-</div>
-
 <script>
 (function(){
   "use strict";
+
+  // ---------- screenshot tabs (real app screenshots, no mockups) ----------
+  (function initScreenshotTabs(){
+    var tabs = document.getElementById('screenshotTabs');
+    var img = document.getElementById('screenshotImg');
+    if (!tabs || !img) return;
+    var FILES = {
+      'general-tweaks': 'fixcore-general-tweaks.png',
+      'fix-repair': 'fixcore-fix-repair.png',
+      'bios-optimization': 'fixcore-bios-optimization.png',
+      'game-boost': 'fixcore-game-boost.png',
+      'game-library': 'fixcore-game-library.png'
+    };
+    tabs.addEventListener('click', function(e){
+      var btn = e.target.closest('.screenshot-tab');
+      if (!btn) return;
+      tabs.querySelectorAll('.screenshot-tab').forEach(function(t){ t.classList.remove('active'); });
+      btn.classList.add('active');
+      var file = FILES[btn.dataset.target];
+      if (file) img.src = '' + file;
+    });
+  })();
 
   // ---------- state (in-memory only, no persistence) ----------
   var currentUser = null;   // {username, tag, avatarUrl}
@@ -1145,7 +1226,7 @@
   });
   document.getElementById('modalClose').addEventListener('click', closeModal);
   overlay.addEventListener('click', function(e){ if (e.target === overlay) closeModal(); });
-  document.addEventListener('keydown', function(e){ if (e.key === 'Escape'){ closeModal(); closeCart(); closeTool(); } });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape'){ closeModal(); closeCart(); } });
 
   // ---------- toast ----------
   var toast = document.getElementById('toast');
@@ -1347,233 +1428,35 @@
 
   renderCart();
 
-  // ---------- tools data ----------
-  var ICONS = {
-    scan: '<circle cx="10" cy="10" r="6"/><path d="M21 21l-4.3-4.3"/>',
-    info: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/><path d="M6 12l3-3 2 2 4-4"/>',
-    fix: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.1 2.1-2-2z"/>',
-    boost: '<rect x="2" y="7" width="20" height="10" rx="5"/><path d="M8 10v4M6 12h4"/><circle cx="16" cy="10.5" r="0.8" fill="currentColor"/><circle cx="18" cy="12.5" r="0.8" fill="currentColor"/>',
-    perf: '<path d="M12 12l4-4"/><circle cx="12" cy="12" r="9"/><path d="M8 12a4 4 0 0 1 8 0"/>',
-    safe: '<path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/><path d="M9 12l2 2 4-4"/>',
-    bios: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 4v16M4 9h5M4 15h5"/>',
-    gpu: '<rect x="2" y="6" width="20" height="9" rx="2"/><circle cx="7" cy="10.5" r="1.6"/><circle cx="12.5" cy="10.5" r="1.6"/><path d="M18 6V4M20 15v3"/>',
-    library: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
-    net: '<path d="M5 12a7 7 0 0 1 14 0"/><path d="M8.5 15.5a3 3 0 0 1 7 0"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/>',
-    startup: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
-    debloat: '<path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/>',
-    restore: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>'
-  };
-
-  var TOOLS = [
-    { id:'scan', icon:'scan', title:'PC Scan', desc:"A full system sweep in under a minute.", type:'scan', action:'Run scan',
-      steps:['Checking memory usage','Checking CPU load','Checking disk space','Checking system tools'],
-      result:'Scan complete — no critical issues found.' },
-    { id:'general', icon:'info', title:'General Tweaks', desc:'Everyday Windows settings you can flip individually — each one reversible.', type:'toggles', items:[
-      {label:'Disable Notifications'},{label:'Disable Animations'},{label:'Disable Background Apps'},{label:'Disable Search Indexing'}
-    ], action:'Apply changes', result:'Tweaks applied.' },
-    { id:'fixrepair', icon:'fix', title:'Fix & Repair', desc:'One-click fixes for the everyday Windows annoyances.', type:'scan', action:'Run repair',
-      steps:['Clearing temporary files','Emptying Recycle Bin','Flushing DNS cache','Opening Disk Cleanup'],
-      result:'Repair complete — temp files cleared, DNS cache flushed.' },
-    { id:'perf', icon:'perf', title:'Performance', desc:'Live CPU, GPU, RAM and disk monitoring, right on the Home page.', type:'scan', action:'Start monitoring',
-      steps:['Reading CPU usage','Reading GPU usage','Reading RAM usage','Reading disk activity'],
-      result:'Live monitoring active — updates every couple of seconds.' },
-    { id:'bios', icon:'bios', title:'BIOS Optimization', desc:'Reads your firmware settings and tells you exactly what to change — BIOS changes are hardware-specific, so FixCore won\'t touch them for you.', type:'scan', action:'Read firmware settings',
-      steps:['Reading CPU features (SMT, CPPC)','Reading memory profile (XMP/EXPO)','Checking virtualization settings','Checking DEP / NX setting'],
-      result:'Recommendations ready — exact values to set in your BIOS are shown in the app.' },
-    { id:'graphics', icon:'gpu', title:'Graphics Tweaks', desc:'NVIDIA driver settings tuned for performance, applied and reverted per setting.', type:'toggles', items:[
-      {label:'Prefer maximum performance'},{label:'Disable V-Sync'},{label:'Enable threaded optimization'},{label:'Unlimited shader cache'}
-    ], action:'Apply changes', result:'Graphics settings applied.' },
-    { id:'gameboost', icon:'boost', title:'Game Boost', desc:'One-tap toggles for Game Mode, power plan and background app load before you play.', type:'toggles', items:[
-      {label:'Enable Windows Game Mode'},{label:'High Performance power plan'},{label:'Disable Xbox Game Bar / Game DVR'},{label:'Suspend background app priority'}
-    ], action:'Enable boost', result:'Game Boost enabled.' },
-    { id:'library', icon:'library', title:'Game Library', desc:'Detects installed games and lets you mark them optimized.', type:'list', items:[
-      {label:'Counter-Strike 2'},{label:'Valorant'},{label:'Fortnite'},{label:'Minecraft'}
-    ], action:'Optimize all', result:'All games optimized.' },
-    { id:'network', icon:'net', title:'Networking', desc:'Lower latency and steadier connections, per toggle — all reversible.', type:'toggles', items:[
-      {label:'Disable Nagle\'s Algorithm'},{label:'Optimize TCP Settings'},{label:'Optimize Network Adapters'},{label:'Use Cloudflare DNS (1.1.1.1)'}
-    ], action:'Apply changes', result:'Network optimized.' },
-    { id:'startup', icon:'startup', title:'Startup Apps', desc:'Control what launches when Windows boots — disable and re-enable anytime.', type:'list', items:[
-      {label:'Steam'},{label:'Discord'},{label:'Spotify'},{label:'OneDrive'}
-    ], action:'Apply changes', result:'Startup list updated.' },
-    { id:'debloat', icon:'debloat', title:'Debloating', desc:'Finds pre-installed Windows apps that are safe to remove.', type:'toggles', items:[
-      {label:'Remove Microsoft 3D Viewer'},{label:'Remove Mixed Reality Portal'},{label:'Remove Xbox Game Bar'},{label:'Remove pre-installed Store apps'}
-    ], action:'Apply changes', result:'System debloated.' },
-    { id:'restore', icon:'restore', title:'System Restore', desc:'Create and manage Windows System Restore points before you tweak anything.', type:'scan', action:'Create restore point',
-      steps:['Snapshotting system files','Saving registry state','Indexing installed drivers','Finalizing restore point'],
-      result:'Restore point created.' },
-    { id:'safe', icon:'safe', title:'Safe & Secure', desc:'Every tweak that\'s wired up only touches official, reversible Windows settings — nothing installs drivers or changes BIOS/UEFI.', type:'scan', action:'Run security check',
-      steps:['Confirming no drivers are modified','Confirming no BIOS/UEFI settings are touched','Confirming every applied tweak is reversible','Checking admin rights where needed'],
-      result:'All checks passed — FixCore only touches documented, reversible Windows settings.' }
-  ];
-
-  var toolGrid = document.getElementById('toolGrid');
-  toolGrid.innerHTML = TOOLS.map(function(t){
-    return '<button class="tool-tile" data-id="' + t.id + '">' +
-      '<div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICONS[t.icon] + '</svg></div>' +
-      '<h4>' + t.title + '</h4><p>' + t.desc + '</p>' +
-    '</button>';
-  }).join('');
-  toolGrid.querySelectorAll('.tool-tile').forEach(function(tile){
-    tile.addEventListener('click', function(){ openTool(tile.dataset.id); });
-  });
-
-  // ---------- tool modal ----------
-  var toolOverlay = document.getElementById('toolOverlay');
-  var toolIcon = document.getElementById('toolIcon');
-  var toolTitle = document.getElementById('toolTitle');
-  var toolDesc = document.getElementById('toolDesc');
-  var toolBody = document.getElementById('toolBody');
-  var toolProgress = document.getElementById('toolProgress');
-  var toolProgressBar = document.getElementById('toolProgressBar');
-  var toolProgressPct = document.getElementById('toolProgressPct');
-  var toolResult = document.getElementById('toolResult');
-  var toolResultText = document.getElementById('toolResultText');
-  var activeTool = null;
-  var toolTimer = null;
-  var toolStartTimer = null;
-
-  function openTool(id){
-    activeTool = TOOLS.find(function(t){ return t.id === id; });
-    if (!activeTool) return;
-
-    toolIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICONS[activeTool.icon] + '</svg>';
-    toolTitle.textContent = activeTool.title;
-    toolDesc.textContent = activeTool.desc;
-    toolProgress.classList.remove('show');
-    toolResult.classList.remove('show');
-    toolProgressBar.style.width = '0%';
-    toolProgressPct.textContent = '0%';
-
-    if (activeTool.type === 'scan'){
-      toolBody.innerHTML =
-        '<p style="font-size:13px;color:var(--sub);">This runs locally on this PC — nothing leaves your device.</p>' +
-        '<div class="step-log" id="stepLog"></div>';
-    } else {
-      toolBody.innerHTML = activeTool.items.map(function(it, i){
-        var check = '<svg class="row-check" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
-        if (activeTool.type === 'list'){
-          return '<div class="toggle-row" data-idx="' + i + '"><span class="t-label">' + it.label + '</span>' +
-            check + '<button class="mini-btn" data-idx="' + i + '">Optimize</button></div>';
-        }
-        return '<div class="toggle-row" data-idx="' + i + '"><span class="t-label">' + it.label + '</span>' +
-          check + '<div class="switch on" data-idx="' + i + '"></div></div>';
-      }).join('');
-
-      if (activeTool.type === 'toggles'){
-        toolBody.querySelectorAll('.switch').forEach(function(sw){
-          sw.addEventListener('click', function(){ sw.classList.toggle('on'); });
-        });
-      } else {
-        toolBody.querySelectorAll('.mini-btn').forEach(function(btn){
-          btn.addEventListener('click', function(){ markRowDone(btn.closest('.toggle-row'), btn); });
-        });
-      }
-    }
-
-    toolOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-
-    // No "Run" button anymore — each tool starts doing its own thing
-    // a beat after the panel opens, so there's time to read what it is first.
-    clearTimeout(toolStartTimer);
-    toolStartTimer = setTimeout(runActiveTool, 700);
-  }
-  function closeTool(){
-    toolOverlay.classList.remove('open');
-    document.body.style.overflow = '';
-    clearTimeout(toolTimer);
-    clearTimeout(toolStartTimer);
-  }
-  document.getElementById('toolClose').addEventListener('click', closeTool);
-  toolOverlay.addEventListener('click', function(e){ if (e.target === toolOverlay) closeTool(); });
-
-  function markRowDone(row, controlEl){
-    if (!row || row.classList.contains('done')) return;
-    row.classList.add('done');
-    if (controlEl && controlEl.tagName === 'BUTTON'){ controlEl.textContent = 'Optimized'; controlEl.disabled = true; }
-  }
-
-  // Runs a named list of steps one at a time, calling onStep(index) as each
-  // one finishes, then onFinish() once they're all done — so every tool's
-  // "run" action narrates the specific thing it's doing, not a generic scan.
-  function runSteps(labels, onStep, onFinish){
-    var i = 0;
-    toolProgressBar.style.width = '0%';
-    toolProgressPct.textContent = '0%';
-    function next(){
-      if (i >= labels.length){ onFinish(); return; }
-      onStep(i, labels[i]);
-      i++;
-      toolProgressPct.textContent = Math.round((i/labels.length)*100) + '%';
-      toolProgressBar.style.width = Math.round((i/labels.length)*100) + '%';
-      toolTimer = setTimeout(next, 550 + Math.random()*450);
-    }
-    toolTimer = setTimeout(next, 300);
-  }
-
-  function runActiveTool(){
-    if (!activeTool) return;
-    toolResult.classList.remove('show');
-    toolProgress.classList.add('show');
-    clearTimeout(toolTimer);
-
-    if (activeTool.type === 'scan'){
-      var log = document.getElementById('stepLog');
-      log.innerHTML = activeTool.steps.map(function(s, i){
-        return '<div class="step-log-row" data-idx="' + i + '"><span class="spin"></span>' +
-          '<svg class="check" viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>' +
-          '<span>' + s + '</span></div>';
-      }).join('');
-      var rows = log.querySelectorAll('.step-log-row');
-      rows[0].classList.add('show');
-      runSteps(activeTool.steps, function(i){
-        rows[i].classList.add('show');
-        if (i > 0) rows[i-1].classList.add('done');
-        if (rows[i+1]) rows[i+1].classList.add('show');
-      }, function(){
-        rows[rows.length-1].classList.add('done');
-        finishRun();
+  // ---------- hero app-window preview (real screenshots) ----------
+  (function initHeroPreview(){
+    var img = document.getElementById('heroPreviewImg');
+    var thumbs = document.getElementById('heroPreviewThumbs');
+    var nextBtn = document.getElementById('heroPreviewNext');
+    if (!img || !thumbs || !nextBtn) return;
+    var ORDER = ['general-tweaks', 'fix-repair', 'bios-optimization', 'game-boost', 'game-library'];
+    var FILES = {
+      'general-tweaks': 'fixcore-general-tweaks.png',
+      'fix-repair': 'fixcore-fix-repair.png',
+      'bios-optimization': 'fixcore-bios-optimization.png',
+      'game-boost': 'fixcore-game-boost.png',
+      'game-library': 'fixcore-game-library.png'
+    };
+    var current = 0;
+    function show(idx){
+      current = (idx + ORDER.length) % ORDER.length;
+      var key = ORDER[current];
+      img.src = '' + FILES[key];
+      thumbs.querySelectorAll('.app-preview-thumb').forEach(function(t){
+        t.classList.toggle('active', t.dataset.target === key);
       });
-
-    } else if (activeTool.type === 'toggles'){
-      var onRows = Array.prototype.filter.call(toolBody.querySelectorAll('.toggle-row'), function(row){
-        return row.querySelector('.switch').classList.contains('on');
-      });
-      if (onRows.length === 0){ finishRun('Nothing selected — turn on at least one option.'); return; }
-      onRows.forEach(function(row){ row.classList.add('applying'); });
-      runSteps(onRows.map(function(r){ return r.querySelector('.t-label').textContent; }), function(i){
-        onRows[i].classList.remove('applying');
-        onRows[i].classList.add('done');
-      }, function(){ finishRun(); });
-
-    } else { // list
-      var rows2 = toolBody.querySelectorAll('.toggle-row');
-      runSteps(activeTool.items.map(function(it){ return it.label; }), function(i){
-        var btn = rows2[i].querySelector('.mini-btn');
-        markRowDone(rows2[i], btn);
-      }, function(){ finishRun(); });
     }
-
-    function finishRun(customMsg){
-      setTimeout(function(){
-        toolProgress.classList.remove('show');
-        toolResultText.textContent = customMsg || activeTool.result;
-        toolResult.classList.add('show');
-      }, 300);
-    }
-  }
-
-  // ---------- animated scan panel numbers ----------
-  (function animatePanel(){
-    var bars = document.querySelectorAll('.scan-panel .bar-fill');
-    var vals = [86, 62];
-    setInterval(function(){
-      bars.forEach(function(bar, i){
-        var drift = Math.max(40, Math.min(95, vals[i] + (Math.random()*10-5)));
-        vals[i] = drift;
-        bar.style.width = drift + '%';
-      });
-    }, 2600);
+    thumbs.addEventListener('click', function(e){
+      var btn = e.target.closest('.app-preview-thumb');
+      if (!btn) return;
+      show(ORDER.indexOf(btn.dataset.target));
+    });
+    nextBtn.addEventListener('click', function(){ show(current + 1); });
   })();
 
   renderAuthNav();
