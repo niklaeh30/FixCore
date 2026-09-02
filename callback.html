@@ -964,7 +964,10 @@
             <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Free updates</span><span class="li-sub">Every update to this version, at no extra cost</span></div></li>
           </ul>
           <p class="price-footnote">Windows 10 &amp; 11 · 64-bit · Activates on one PC, license transferable if you upgrade hardware.</p>
-          <button class="btn btn-primary form-submit" disabled>Coming soon</button>
+          <a class="btn btn-primary form-submit" href="products.html" style="text-decoration:none;">
+            Get FixCore 2.1
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
         </div>
         <div class="price-card coming-soon">
           <span class="tag soon">COMING SOON</span>
@@ -1206,14 +1209,6 @@
       </div>
     </div>
 
-    <div class="account-card danger">
-      <h4>
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
-        Disconnect Discord
-      </h4>
-      <p style="margin-bottom:14px;">Signs you out here and takes you to Discord's own settings, where you can fully revoke FixCore's access to your account.</p>
-      <button class="btn btn-ghost" id="disconnectDiscordBtn" style="border-color:rgba(255,92,92,0.4);color:var(--danger);">Disconnect &amp; sign out</button>
-    </div>
     </div>
   </div>
 </div>
@@ -1519,16 +1514,6 @@
   function closeAccount(){ accountOverlay.classList.remove('open'); document.body.style.overflow = ''; }
   document.getElementById('accountClose').addEventListener('click', closeAccount);
   accountOverlay.addEventListener('click', function(e){ if (e.target === accountOverlay) closeAccount(); });
-  document.getElementById('disconnectDiscordBtn').addEventListener('click', function(){
-    currentUser = null;
-    try { localStorage.removeItem(DISCORD_SESSION_KEY); } catch (e) { /* ignore */ }
-    renderAuthNav();
-    renderDashboard();
-    renderCtas();
-    closeAccount();
-    showToast('Signed out. Opening Discord\'s connection settings…');
-    window.open('https://discord.com/settings/authorized-apps', '_blank', 'noopener');
-  });
 
   function addToCart(plan, price){
     if (cart.some(function(i){ return i.plan === plan; })){
