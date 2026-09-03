@@ -1348,7 +1348,7 @@
   var cart = [];             // {plan, price}
 
   var DISCORD_CLIENT_ID = '1539670021532422154';
-  var DISCORD_REDIRECT_URI = 'https://fixcorepc.com/callback.html';
+  var DISCORD_REDIRECT_URI = 'https://fixcorepc.com/';
   var DISCORD_GUILD_ID = '1538214452191826122';
   // Any purchase key redeemed via the FixCore bot grants one of these two
   // roles — checking for either is how "Purchases" knows you own FixCore
@@ -1442,7 +1442,7 @@
     window.location.href = discordAuthorizeUrl();
   });
 
-  // Runs once on page load. Discord redirects back to DISCORD_REDIRECT_URI
+  // Runs once on page load. Discord redirects back to the homepage
   // with #access_token=...&token_type=Bearer in the URL — this page must
   // actually be served at that exact address for the redirect to land here.
   function checkDiscordRedirect(){

@@ -350,7 +350,7 @@
   // ---------- state (persisted to localStorage so login carries across pages) ----------
   var currentUser = null;   // {username, tag, avatarUrl}
   try {
-    var storedUser = localStorage.getItem('fixcoreUser');
+    var storedUser = localStorage.getItem('fixcore_discord_user');
     if (storedUser) currentUser = JSON.parse(storedUser);
   } catch(e){}
 
@@ -420,7 +420,7 @@
         '<button class="btn btn-text" id="logoutBtn">Log out</button>';
       document.getElementById('logoutBtn').addEventListener('click', function(){
         currentUser = null;
-        try { localStorage.removeItem('fixcoreUser'); } catch(e){}
+        try { localStorage.removeItem('fixcore_discord_user'); } catch(e){}
         renderAuthNav();
         showToast('You have been signed out.');
       });
@@ -437,6 +437,7 @@
       return;
     }
     showToast('Redirecting to secure checkout…');
+    window.location.href = 'https://buy.stripe.com/cNi5kEfah07c9cD9z63VC01';
   });
 
   renderAuthNav();

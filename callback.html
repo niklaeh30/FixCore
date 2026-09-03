@@ -1380,6 +1380,12 @@
           accessToken: token
         };
         try { localStorage.setItem(DISCORD_SESSION_KEY, JSON.stringify(currentUser)); } catch (e) { /* ignore */ }
+        var returnTo = null;
+        try { returnTo = sessionStorage.getItem('fixcoreReturnTo'); sessionStorage.removeItem('fixcoreReturnTo'); } catch (e) { /* ignore */ }
+        if (returnTo){
+          window.location.href = returnTo;
+          return;
+        }
         renderAuthNav();
         renderDashboard();
         renderCtas();
