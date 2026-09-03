@@ -81,6 +81,19 @@
 
   /* ---------- nav auth ---------- */
   .nav-actions{display:flex;align-items:center;gap:14px;}
+  .cart-btn{position:relative;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;transition:background .2s;}
+  .cart-btn:hover{background:rgba(90,170,255,0.08);}
+  .cart-btn svg{width:18px;height:18px;stroke:var(--ice);}
+  .cart-badge{position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 3px;border-radius:8px;background:var(--blue-bright);color:#04060d;font-size:10px;font-weight:700;line-height:16px;text-align:center;display:none;}
+  .cart-badge.show{display:block;}
+  .cart-overlay{position:fixed;inset:0;z-index:200;background:rgba(4,6,13,0.6);backdrop-filter:blur(4px);display:none;}
+  .cart-overlay.open{display:block;}
+  .cart-drawer{position:absolute;top:0;right:0;bottom:0;width:380px;max-width:100%;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s ease;}
+  .cart-overlay.open .cart-drawer{transform:translateX(0);}
+  .cart-head{display:flex;align-items:center;justify-content:space-between;padding:22px 22px 18px;border-bottom:1px solid var(--border);}
+  .cart-head h2{font-family:var(--font-display);font-size:18px;}
+  .cart-body{flex:1;overflow-y:auto;padding:18px 22px;}
+  .cart-empty{text-align:center;color:var(--sub-dim);font-size:13.5px;padding:60px 10px;}
   .nav-actions .btn{width:auto;padding:10px 20px;font-size:14px;}
   .user-chip{display:flex;align-items:center;gap:10px;padding:6px 14px 6px 6px;border:1px solid var(--border);border-radius:99px;background:rgba(90,170,255,0.06);}
   .user-chip .avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--blue-bright),var(--blue-deep));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:12px;font-weight:700;color:#fff;object-fit:cover;}
@@ -264,6 +277,10 @@
       <li><a href="download.html">Download</a></li>
     </ul>
 
+    <button class="cart-btn" id="cartBtn" aria-label="Open cart">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+      <span class="cart-badge" id="cartBadge">0</span>
+    </button>
     <div class="nav-actions" id="navActions">
       <button class="btn btn-primary" id="openLogin">Sign in with Discord</button>
     </div>
@@ -343,6 +360,19 @@
 
 <div class="toast" id="toast"><span class="dot"></span><span id="toastText">Welcome to FixCore</span></div>
 
+<!-- CART DRAWER -->
+<div class="cart-overlay" id="cartOverlay">
+  <div class="cart-drawer">
+    <div class="cart-head">
+      <h2>Your cart</h2>
+      <button class="modal-close" id="cartClose" style="position:static;">✕</button>
+    </div>
+    <div class="cart-body" id="cartBody">
+      <div class="cart-empty">Your cart is empty.<br>Buy FixCore 2.1 below to get started.</div>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
@@ -384,8 +414,16 @@
     document.body.style.overflow = '';
   }
   document.getElementById('modalClose').addEventListener('click', closeModal);
+
+  // ---------- cart ----------
+  var cartOverlay = document.getElementById('cartOverlay');
+  function openCart(){ cartOverlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
+  function closeCart(){ cartOverlay.classList.remove('open'); document.body.style.overflow = ''; }
+  document.getElementById('cartBtn').addEventListener('click', openCart);
+  document.getElementById('cartClose').addEventListener('click', closeCart);
+  cartOverlay.addEventListener('click', function(e){ if (e.target === cartOverlay) closeCart(); });
   overlay.addEventListener('click', function(e){ if (e.target === overlay) closeModal(); });
-  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeModal(); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape'){ closeModal(); closeCart(); } });
 
   // ---------- toast ----------
   var toast = document.getElementById('toast');
