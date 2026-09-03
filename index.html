@@ -1364,7 +1364,7 @@
   var cart = [];             // {plan, price}
 
   var DISCORD_CLIENT_ID = '1539670021532422154';
-  var DISCORD_REDIRECT_URI = 'https://fixcorepc.com/';
+  var DISCORD_REDIRECT_URI = 'https://fixcorepc.com/callback.html';
   var DISCORD_GUILD_ID = '1538214452191826122';
   // Any purchase key redeemed via the FixCore bot grants one of these two
   // roles — checking for either is how "Purchases" knows you own FixCore
@@ -1455,6 +1455,7 @@
   // ---------- discord auth (real OAuth2 implicit grant) ----------
   document.getElementById('discordAuthBtn').addEventListener('click', function(){
     this.classList.add('loading');
+    try { sessionStorage.setItem('fixcoreReturnTo', 'index.html'); } catch(e){}
     window.location.href = discordAuthorizeUrl();
   });
 

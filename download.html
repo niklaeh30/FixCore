@@ -741,7 +741,8 @@
 
   // ---------- CONFIG - fill these in ----------
   var DISCORD_CLIENT_ID = '1539670021532422154';
-  var DISCORD_REDIRECT_URI = 'https://fixcorepc.com/download.html'; // must be registered in the Discord app's OAuth2 redirect list
+  var DISCORD_REDIRECT_URI = 'https://fixcorepc.com/callback.html'; // single shared redirect URI, registered once in the Discord app's OAuth2 redirect list
+  var DISCORD_SESSION_KEY = 'fixcore_discord_user'; // shared with index.html/callback.html/products.html
   var GUILD_ID = '1538214452191826122'; // the Discord server (guild) ID to check membership/roles in
   var REQUIRED_ROLE_ID = '1540798693123559474';
   var DOWNLOAD_URL = 'FixCore-Setup.exe'; // actual file URL (e.g. a GitHub release asset)
@@ -796,9 +797,11 @@
   }
 
   document.getElementById('dlDiscordBtn').addEventListener('click', function(){
+    try { sessionStorage.setItem('fixcoreReturnTo', 'download.html'); } catch(e){}
     window.location.href = discordAuthorizeUrl();
   });
   document.getElementById('dlRetryBtn').addEventListener('click', function(){
+    try { sessionStorage.setItem('fixcoreReturnTo', 'download.html'); } catch(e){}
     window.location.href = discordAuthorizeUrl();
   });
 
@@ -855,8 +858,23 @@
       });
   }
 
+  // If we already have a Discord session (e.g. just came back from
+  // callback.html after signing in), verify the role immediately instead
+  // of asking to sign in again.
+  function checkStoredSession(){
+    try {
+      var saved = localStorage.getItem(DISCORD_SESSION_KEY);
+      if (!saved) return false;
+      var user = JSON.parse(saved);
+      if (!user || !user.accessToken) return false;
+      showState('checking');
+      verifyRole(user.accessToken);
+      return true;
+    } catch (e) { return false; }
+  }
+
   showState('signedOut');
-  checkDiscordRedirect();
+  if (!checkStoredSession()) checkDiscordRedirect();
 })();
 </script>
 
