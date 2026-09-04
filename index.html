@@ -1598,12 +1598,15 @@
   }
 
   // Looks up the license key the redeem bot generated for this Discord
-  // user, if the bot exposes such an endpoint. Returns the key string or
-  // null (never rejects) so a missing/unbuilt endpoint just falls back to
-  // "check your DMs" instead of showing an error.
-  var LICENSE_LOOKUP_URL = 'https://worker-production-8250.up.railway.app/api/redemptions/';
-  function fetchLicenseKey(discordId){
-    return fetch(LICENSE_LOOKUP_URL + discordId)
+  // user, if the bot exposes such an endpoint. Sends the person's own
+  // Discord access token so the bot can verify identity itself — never
+  // returns an error to the caller, so a missing/unreachable endpoint
+  // just falls back to "check your DMs" instead of showing an error.
+  var LICENSE_LOOKUP_URL = 'https://worker-production-8250.up.railway.app/api/redemptions/me';
+  function fetchLicenseKey(accessToken){
+    return fetch(LICENSE_LOOKUP_URL, {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    })
       .then(function(res){ return res.ok ? res.json() : null; })
       .then(function(data){ return (data && data.key) ? data.key : null; })
       .catch(function(){ return null; });
@@ -1630,7 +1633,7 @@
           '</div>' +
           '<p style="margin-top:12px;">Your license key was sent via the FixCore bot in Discord — check your DMs or the redeem channel if you need it again.</p>' +
           '<div id="licenseKeyBox"></div>';
-        fetchLicenseKey(currentUser.id).then(function(key){
+        fetchLicenseKey(currentUser.accessToken).then(function(key){
           if (!key) return;
           var box = document.getElementById('licenseKeyBox');
           if (!box) return;
