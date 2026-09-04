@@ -1374,6 +1374,7 @@
           ? 'https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.png?size=64'
           : null;
         currentUser = {
+          id: user.id,
           username: user.global_name || user.username,
           tag: '@' + user.username,
           avatarUrl: avatarUrl,
