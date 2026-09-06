@@ -1399,6 +1399,8 @@
   // roles — checking for either is how "Purchases" knows you own FixCore
   // 2.1 without needing a website backend of its own.
   var FIXCORE_2_1_ROLE_IDS = ['1540798693123559474', '1538255411298304010'];
+  // NettBoost is gated behind this single Discord role.
+  var NETTBOOST_ROLE_ID = '1545452018313732116';
   function discordAuthorizeUrl(){
     var params = new URLSearchParams({
       client_id: DISCORD_CLIENT_ID,
@@ -1422,6 +1424,22 @@
     }).then(function(member){
       var roles = member.roles || [];
       return FIXCORE_2_1_ROLE_IDS.some(function(id){ return roles.indexOf(id) !== -1; });
+    });
+  }
+
+  // Checks whether the signed-in person holds the NettBoost role. Same
+  // approach as checkOwnsFixCore21 — rejects (rather than resolving false)
+  // if the lookup itself failed, so callers can tell "no role" apart from
+  // "couldn't check".
+  function checkOwnsNettBoost(accessToken){
+    return fetch('https://discord.com/api/v10/users/@me/guilds/' + DISCORD_GUILD_ID + '/member', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    }).then(function(res){
+      if (!res.ok) throw new Error('member lookup failed ' + res.status);
+      return res.json();
+    }).then(function(member){
+      var roles = member.roles || [];
+      return roles.indexOf(NETTBOOST_ROLE_ID) !== -1;
     });
   }
 
@@ -1653,13 +1671,39 @@
       return;
     }
     body.innerHTML = '<p style="color:var(--sub-dim);">Checking your Discord roles…</p>';
-    checkOwnsFixCore21(currentUser.accessToken).then(function(owns){
-      if (owns){
+    Promise.all([
+      checkOwnsFixCore21(currentUser.accessToken),
+      checkOwnsNettBoost(currentUser.accessToken)
+    ]).then(function(results){
+      var ownsFixCore = results[0];
+      var ownsNettBoost = results[1];
+
+      if (!ownsFixCore && !ownsNettBoost){
         body.innerHTML =
+          '<p style="color:var(--sub-dim);">No purchases yet.</p>' +
+          '<div class="row" style="margin-top:12px;"><a class="link-btn" href="products.html">Browse products →</a></div>';
+        return;
+      }
+
+      var rows = '';
+      if (ownsFixCore){
+        rows +=
           '<div class="purchase-row">' +
             '<div><div class="name">FixCore 2.1</div><div class="sub">Verified via your Discord role</div></div>' +
             '<span class="purchase-badge">Owned</span>' +
-          '</div>' +
+          '</div>';
+      }
+      if (ownsNettBoost){
+        rows +=
+          '<div class="purchase-row">' +
+            '<div><div class="name">NettBoost</div><div class="sub">Verified via your Discord role</div></div>' +
+            '<span class="purchase-badge">Owned</span>' +
+          '</div>';
+      }
+      body.innerHTML = rows;
+
+      if (ownsFixCore){
+        body.innerHTML +=
           '<p style="margin-top:12px;">Your license key was sent via the FixCore bot in Discord — check your DMs or the redeem channel if you need it again.</p>' +
           '<div id="licenseKeyBox"></div>';
         fetchLicenseKey(currentUser.accessToken).then(function(key){
@@ -1675,10 +1719,6 @@
             navigator.clipboard.writeText(key).then(function(){ showToast('License key copied.'); });
           });
         });
-      } else {
-        body.innerHTML =
-          '<p style="color:var(--sub-dim);">No purchases yet.</p>' +
-          '<div class="row" style="margin-top:12px;"><a class="link-btn" href="products.html">Browse products →</a></div>';
       }
     }).catch(function(){
       body.innerHTML =
