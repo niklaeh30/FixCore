@@ -598,7 +598,7 @@
   .price-card .price-footnote{font-size:11.5px;color:var(--sub-dim);margin:-8px 0 16px;line-height:1.5;}
   .price-card ul{margin-bottom:26px;flex:1;}
   .price-card li{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;color:var(--sub);margin-bottom:11px;}
-  .price-card ul.detailed{display:grid;grid-template-columns:1fr 1fr;column-gap:18px;row-gap:0;}
+  .price-card ul.detailed{display:grid;grid-template-columns:1fr 1fr;column-gap:18px;row-gap:0;align-content:start;}
   .price-card ul.detailed li{margin-bottom:13px;}
   .price-card ul.detailed li .li-title{display:block;font-size:12.5px;color:var(--ice);font-weight:600;}
   .price-card ul.detailed li .li-sub{display:none;}
@@ -936,9 +936,19 @@
       <div class="pricing-grid">
         <div class="price-card coming-soon">
           <span class="tag soon">COMING SOON</span>
-          <h3>Standard</h3>
-          <div class="price">?</div>
-          <p class="desc" style="margin-bottom:0;flex:1;">Automated fixes and background monitoring.</p>
+          <h3>NettBoost</h3>
+          <div class="price">$5</div>
+          <p class="desc">Reduces in-game ping with a dedicated network relay.</p>
+          <ul class="detailed">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Server ping display</span><span class="li-sub">See live latency to every server before you connect</span></div></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">One-click connect</span><span class="li-sub">Route your traffic through the fastest relay in one tap</span></div></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Lower latency routing</span><span class="li-sub">Cuts hops between you and the game server</span></div></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Live stats</span><span class="li-sub">Real-time ping and jitter while you play</span></div></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Server browser</span><span class="li-sub">Pick from a list of relay locations near your game servers</span></div></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Auto server select</span><span class="li-sub">Automatically connects to the lowest-ping relay</span></div></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Route diagram</span><span class="li-sub">Visual breakdown of every hop your traffic takes</span></div></li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Per-game profiles</span><span class="li-sub">Save your preferred relay for each game</span></div></li>
+          </ul>
           <button class="btn btn-ghost form-submit" disabled>Coming soon</button>
         </div>
         <div class="price-card featured">
