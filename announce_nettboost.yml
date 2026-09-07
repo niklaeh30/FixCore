@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - "nettboost_version.json"
       - "FixCore_NettBoost_Setup.exe"
 
 jobs:
