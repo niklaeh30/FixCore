@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "version.json"
+      - "FixCore-Setup.exe"
+      - "FixCore_NettBoost_Setup.exe"
 
 jobs:
   announce:
