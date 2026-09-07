@@ -1,5 +1,6 @@
 {
   "version": "1.0",
+  "type": "update",
   "changelog": "Early Access release: server browser, ping diagram, live stats.",
   "download_url": "https://fixcorepc.com/download.html"
 }

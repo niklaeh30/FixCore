@@ -21,6 +21,16 @@ jobs:
           VERSION=$(jq -r '.version' nettboost_version.json)
           CHANGELOG=$(jq -r '.changelog' nettboost_version.json)
           DOWNLOAD_URL=$(jq -r '.download_url' nettboost_version.json)
+          TYPE=$(jq -r '.type // "update"' nettboost_version.json)
+
+          case "$TYPE" in
+            update)       EMOJI="🚀"; LABEL="Update";       COLOR=2201331  ;;
+            bug_fix)      EMOJI="🐛"; LABEL="Bug Fix";      COLOR=3066993  ;;
+            feature)      EMOJI="✨"; LABEL="New Feature";  COLOR=9109247  ;;
+            maintenance)  EMOJI="🛠️"; LABEL="Maintenance";  COLOR=15105570 ;;
+            important)    EMOJI="⚠️"; LABEL="Important";    COLOR=15158332 ;;
+            *)            EMOJI="📢"; LABEL="Announcement"; COLOR=2201331  ;;
+          esac
 
           curl -sf -X POST "$DISCORD_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
@@ -29,10 +39,10 @@ jobs:
             "content": "@everyone",
             "embeds": [
               {
-                "title": "⚡ NettBoost (Lagster) ${VERSION} is out now!",
+                "title": "${EMOJI} NettBoost (Lagster) ${VERSION} — ${LABEL}",
                 "description": "${CHANGELOG}\n\n[⬇️ Download here](${DOWNLOAD_URL})",
-                "color": 2201331,
-                "footer": { "text": "NettBoost • Release ${VERSION}" },
+                "color": ${COLOR},
+                "footer": { "text": "NettBoost • ${LABEL} • ${VERSION}" },
                 "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
               }
             ]
