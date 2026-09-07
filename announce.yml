@@ -1,0 +1,39 @@
+name: Announce new FixCore release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "version.json"
+
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Read version.json and post to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          VERSION=$(jq -r '.version' version.json)
+          CHANGELOG=$(jq -r '.changelog' version.json)
+          DOWNLOAD_URL=$(jq -r '.download_url' version.json)
+
+          curl -sf -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "content": "@everyone",
+            "embeds": [
+              {
+                "title": "🚀 FixCore ${VERSION} is out now!",
+                "description": "${CHANGELOG}\n\n[⬇️ Download here](${DOWNLOAD_URL})",
+                "color": 3062015,
+                "footer": { "text": "FixCore • Release ${VERSION}" },
+                "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              }
+            ]
+          }
+          EOF
