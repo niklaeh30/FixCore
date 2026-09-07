@@ -1,5 +1,5 @@
 {
-  "version": "2.1 test",
+  "version": "2.1",
   "changelog": "Improved PC scan speed, fixed BIOS optimization crash, new Game Boost presets.",
   "download_url": "https://fixcorepc.com/download.html"
 }
