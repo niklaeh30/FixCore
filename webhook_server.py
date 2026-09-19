@@ -4,6 +4,9 @@ Flask server that:
      redemption key, and stores it against the Stripe session.
   2. Serves a small success page (the one Stripe redirects the customer to)
      that shows their redemption key so they can copy it into Discord.
+  3. Answers a small check-promo lookup the website's checkout pages call
+     while someone types a discount code, so they get a real "Applied"
+     state instead of the site just accepting anything typed in.
 
 Run standalone with:  python webhook_server.py
 Or import `app` and run it under gunicorn/waitress in production.
@@ -13,7 +16,6 @@ from __future__ import annotations
 
 import logging
 
-import requests
 import stripe
 from flask import Flask, abort, jsonify, render_template_string, request
 
@@ -76,7 +78,10 @@ def stripe_webhook():
         # We only care about completed checkouts; ack everything else.
         return "", 200
 
-    session = event["data"]["object"]
+    # Newer stripe-python versions no longer make StripeObject support
+    # dict-style .get() directly — convert to a plain dict up front so the
+    # rest of this function can use normal dict access safely.
+    session = event["data"]["object"].to_dict()
     session_id = session["id"]
     customer_email = (session.get("customer_details") or {}).get("email")
 
@@ -110,6 +115,42 @@ def stripe_webhook():
     return "", 200
 
 
+@app.route("/api/check-promo", methods=["GET", "OPTIONS"])
+def check_promo():
+    """
+    Called from the website's checkout pages while someone types a
+    discount code. Looks the code up against Stripe directly (using the
+    secret key we already have here) so the site can show a real
+    "Applied" state instead of just accepting anything typed in.
+    """
+    if request.method == "OPTIONS":
+        return "", 204  # CORS preflight — headers added by _add_cors_headers
+
+    code = (request.args.get("code") or "").strip()
+    if not code:
+        return jsonify({"valid": False})
+
+    try:
+        result = stripe.PromotionCode.list(code=code, active=True, limit=1)
+    except stripe.StripeError as exc:
+        log.error("Stripe promo lookup failed for %r: %s", code, exc)
+        return jsonify({"valid": False})
+
+    if not result.data:
+        return jsonify({"valid": False})
+
+    # Newer stripe-python versions need an explicit .to_dict() before plain
+    # attribute/key access on nested fields works reliably.
+    promo = result.data[0].to_dict()
+    coupon = promo.get("coupon") or {}
+    return jsonify({
+        "valid": True,
+        "percent_off": coupon.get("percent_off"),
+        "amount_off": coupon.get("amount_off"),
+        "currency": coupon.get("currency"),
+    })
+
+
 _SUCCESS_PAGE = """
 <!doctype html>
 <html lang="en">
@@ -129,6 +170,16 @@ _SUCCESS_PAGE = """
            margin:20px 0; user-select:all; }
     .steps { text-align:left; font-size:0.9rem; color:#c7c7cf; margin-top:20px; }
     .steps li { margin-bottom:6px; }
+    .spinner { width:22px; height:22px; margin:18px auto 4px; border-radius:50%;
+               border:3px solid #2a2a35; border-top-color:#5865F2; animation:spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .email-input { width:100%; box-sizing:border-box; background:#0f0f14; border:1px solid #3a3a46;
+                   border-radius:8px; padding:12px 14px; color:#e6e6ea; font-size:0.95rem; margin:16px 0 10px; }
+    button.buy { display:block; width:100%; background:#5865F2; color:#fff; border:none; font-weight:600;
+                 font-size:0.95rem; padding:12px; border-radius:8px; cursor:pointer; font-family:inherit; }
+    button.buy:hover { opacity:0.85; }
+    .not-found { font-size:0.85rem; margin-top:12px; }
+    a { color:#8ab4ff; }
   </style>
 </head>
 <body>
@@ -138,71 +189,76 @@ _SUCCESS_PAGE = """
       <p>Copy your redemption key and paste it into the redeem button in Discord.</p>
       <div class="key" id="key">{{ key }}</div>
       <ol class="steps">
-        <li>Join the {{ brand }} Discord server</li>
+        <li><a href="{{ discord_url }}" target="_blank" rel="noopener">Join the {{ brand }} Discord server</a></li>
         <li>Click <strong>Redeem</strong> in the #redeem channel</li>
         <li>Paste this key</li>
       </ol>
+    {% elif checking %}
+      <p>We're still generating your key — this usually takes a few seconds. This page will refresh automatically.</p>
+      <div class="spinner" aria-hidden="true"></div>
+      <script>
+        setTimeout(function () {
+          var url = new URL(window.location.href);
+          url.searchParams.set("n", "{{ attempt + 1 }}");
+          window.location.href = url.toString();
+        }, 3000);
+      </script>
     {% else %}
-      <p>We're still generating your key — this usually takes a few seconds. Refresh this page shortly.</p>
+      <p>We couldn't automatically match your key. Enter the email you used at checkout and we'll look it up.</p>
+      <form method="get" action="/success">
+        <input class="email-input" type="email" name="email" placeholder="you@example.com" required value="{{ email or '' }}">
+        <button class="buy" type="submit">Find my key</button>
+      </form>
+      {% if email %}<p class="not-found">No key found yet for that email — if you just paid, wait a few seconds and try again.</p>{% endif %}
+      <p class="not-found">Still stuck? <a href="{{ discord_url }}" target="_blank" rel="noopener">Ask in the {{ brand }} Discord</a> and we'll sort it out.</p>
     {% endif %}
   </div>
 </body>
 </html>
 """
 
+# How many 3-second auto-reloads to try before giving up and offering the
+# email-lookup fallback. 20 * 3s = 1 minute, which is far longer than the
+# webhook should ever realistically take.
+_MAX_POLL_ATTEMPTS = 20
+
 
 @app.route("/success")
 def success():
     session_id = request.args.get("session_id", "")
-    record = database.get_key_by_session(session_id) if session_id else None
-    return render_template_string(_SUCCESS_PAGE, key=record.key if record else None, brand=settings.brand_name)
+    email = request.args.get("email", "").strip()
+    attempt = request.args.get("n", 0, type=int)
+
+    record = None
+    checking = False
+
+    if email:
+        # Explicit fallback lookup — only reached once the customer has
+        # typed their email into the last-resort form below.
+        record = database.get_latest_key_by_email(email)
+    elif session_id and session_id != "{CHECKOUT_SESSION_ID}":
+        # Normal path: Stripe substituted the real session id.
+        record = database.get_key_by_session(session_id)
+        checking = record is None and attempt < _MAX_POLL_ATTEMPTS
+    else:
+        # No usable session id at all (e.g. redirect URL misconfigured) —
+        # still poll for a bit in case it resolves, before falling back.
+        checking = attempt < _MAX_POLL_ATTEMPTS
+
+    return render_template_string(
+        _SUCCESS_PAGE,
+        key=record.key if record else None,
+        brand=settings.brand_name,
+        checking=checking,
+        email=email,
+        attempt=attempt,
+        discord_url=settings.discord_invite_url,
+    )
 
 
 @app.route("/health")
 def health():
     return {"status": "ok"}, 200
-
-
-@app.route("/api/redemptions/me", methods=["GET", "OPTIONS"])
-def my_redemption():
-    """
-    Called from the FixCore website dashboard. The browser sends the
-    person's own Discord OAuth access token (from the site's existing
-    "Sign in with Discord" flow) as a Bearer token — we verify it against
-    Discord ourselves rather than trusting a client-supplied Discord ID,
-    so nobody can query someone else's redemption by guessing their ID.
-    """
-    if request.method == "OPTIONS":
-        # CORS preflight — headers are added by _add_cors_headers above.
-        return "", 204
-
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        return jsonify({"error": "missing bearer token"}), 401
-    access_token = auth_header[len("Bearer "):]
-
-    try:
-        discord_resp = requests.get(
-            "https://discord.com/api/users/@me",
-            headers={"Authorization": f"Bearer {access_token}"},
-            timeout=5,
-        )
-    except requests.RequestException as exc:
-        log.error("Could not reach Discord to verify token: %s", exc)
-        return jsonify({"error": "could not reach discord"}), 502
-
-    if discord_resp.status_code != 200:
-        return jsonify({"error": "invalid or expired discord token"}), 401
-
-    discord_id = discord_resp.json().get("id")
-    if not discord_id:
-        return jsonify({"error": "invalid discord response"}), 502
-
-    record = database.get_latest_key_for_user(discord_id)
-    if not record:
-        return jsonify({"error": "no redemption found"}), 404
-
-    return jsonify({"key": record.key, "redeemed_at": record.redeemed_at}), 200
 
 
 _TEST_SHOP_PAGE = """

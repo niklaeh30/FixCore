@@ -323,23 +323,10 @@
     background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
     padding:30px 26px;display:flex;flex-direction:column;position:relative;
   }
-  .price-card::before{
-    content:'';position:absolute;top:0;left:12px;right:12px;height:2px;border-radius:2px;
-    background:linear-gradient(90deg, transparent, var(--blue-bright), var(--glow), var(--blue-bright), transparent);
-    background-size:200% 100%;
-    animation:priceCardShimmer 3.5s linear infinite;
-  }
-  @keyframes priceCardShimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
-  .price-card.featured{
-    border-color:var(--border-strong);background:linear-gradient(180deg,var(--panel-2),var(--panel));
-    position:relative;
-    box-shadow:0 30px 70px -25px rgba(47,143,255,0.35), 0 0 0 1px rgba(90,170,255,0.08) inset;
-  }
-  .price-card{transition:transform .2s ease, border-color .2s ease;}
-  .price-card.coming-soon:hover{transform:translateY(-3px);border-color:var(--border-strong);}
+  .price-card.featured{border-color:var(--border-strong);background:linear-gradient(180deg,var(--panel-2),var(--panel));}
   .price-card .tag{
-    position:relative;display:inline-block;top:0;margin-bottom:16px;background:var(--blue);color:#fff;font-size:11px;font-weight:700;
-    font-family:var(--font-mono);padding:5px 12px;border-radius:99px;letter-spacing:0.04em;z-index:2;
+    position:absolute;top:-12px;right:24px;background:var(--blue);color:#fff;font-size:11px;font-weight:700;
+    font-family:var(--font-mono);padding:5px 12px;border-radius:99px;letter-spacing:0.04em;
   }
   .price-card h3{font-family:var(--font-display);font-size:19px;margin-bottom:6px;}
   .price-card .price{font-family:var(--font-display);font-size:32px;margin-bottom:4px;}
@@ -348,7 +335,7 @@
   .price-card .price-footnote{font-size:11.5px;color:var(--sub-dim);margin:-8px 0 16px;line-height:1.5;}
   .price-card ul{margin-bottom:26px;flex:1;}
   .price-card li{display:flex;gap:9px;align-items:flex-start;font-size:13.5px;color:var(--sub);margin-bottom:11px;}
-  .price-card ul.detailed{display:grid;grid-template-columns:1fr 1fr;column-gap:18px;row-gap:0;align-content:start;}
+  .price-card ul.detailed{display:grid;grid-template-columns:1fr 1fr;column-gap:18px;row-gap:0;}
   .price-card ul.detailed li{margin-bottom:13px;}
   .price-card ul.detailed li .li-title{display:block;font-size:12.5px;color:var(--ice);font-weight:600;}
   .price-card ul.detailed li .li-sub{display:none;}
@@ -406,77 +393,95 @@
   <div class="wrap">
     <div class="section-head">
       <span class="eyebrow">PRODUCTS</span>
-      <h1>Choose your setup</h1>
-      <p>One-time purchases, no subscriptions. 14-day money-back guarantee on everything.</p>
+      <h1>Get FixCore</h1>
+      <p>One license, the full toolkit. No subscription, no recurring fees.</p>
     </div>
 
-    <div class="pricing-grid">
-      <div class="price-card">
-        <span class="tag" style="background:var(--blue);">NEW</span>
-        <h3>NettBoost</h3>
-        <div class="price">$5</div>
-        <div class="price-meta">One-time payment · Lifetime license · Instant download</div>
-        <p class="desc">Reduces in-game ping with a dedicated network relay.</p>
-        <ul class="detailed">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Server ping display</span><span class="li-sub">See live latency to every server before you connect</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">One-click connect</span><span class="li-sub">Route your traffic through the fastest relay in one tap</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Lower latency routing</span><span class="li-sub">Cuts hops between you and the game server</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Live stats</span><span class="li-sub">Real-time ping and jitter while you play</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Server browser</span><span class="li-sub">Pick from a list of relay locations near your game servers</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Auto server select</span><span class="li-sub">Automatically connects to the lowest-ping relay</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Route diagram</span><span class="li-sub">Visual breakdown of every hop your traffic takes</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Per-game profiles</span><span class="li-sub">Save your preferred relay for each game</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Free updates</span><span class="li-sub">Every update to this version, at no extra cost</span></div></li>
-        </ul>
-        <p class="price-footnote">Windows 10 &amp; 11 · 64-bit · Requires a FixCore account. Activates on one PC, license transferable if you upgrade hardware.</p>
-        <a class="btn btn-primary form-submit" href="nettboost.html" style="text-decoration:none;">
-          Get NettBoost
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-        </a>
-      </div>
+    <div class="checkout-layout">
+    <div class="product-card">
+      <span class="product-tag">EXCLUSIVE</span>
+      <h2>FixCore 2.1</h2>
+      <div class="product-price">$25</div>
+      <div class="product-price-meta">One-time payment · Lifetime license · Instant download</div>
+      <p class="product-desc">The full FixCore toolkit, unlocked forever with a single purchase — no subscription, no recurring fees.</p>
 
-      <div class="price-card featured">
-        <h3>FixCore 2.1</h3>
-        <div class="price">$25</div>
-        <div class="price-meta">One-time payment · Lifetime license · Instant download</div>
-        <p class="desc">The full FixCore toolkit, unlocked forever with a single purchase — no subscription, no recurring fees.</p>
-        <ul class="detailed">
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">PC Scan</span><span class="li-sub">Full system sweep that flags issues in under a minute</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">General Tweaks</span><span class="li-sub">Everyday settings that make Windows feel snappier</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Fix &amp; Repair</span><span class="li-sub">Resolves common Windows problems automatically</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Performance monitoring</span><span class="li-sub">Tracks CPU, GPU, RAM and disk over time</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">BIOS Optimization</span><span class="li-sub">Safe, reversible BIOS-level tuning for stability and speed</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Graphics Tweaks</span><span class="li-sub">GPU driver and rendering settings tuned for speed</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Game Boost</span><span class="li-sub">Frees up CPU and RAM the moment you launch a game</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Game Library</span><span class="li-sub">Per-game optimization profiles, applied automatically</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Networking</span><span class="li-sub">Lower latency and steadier connections</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Startup Apps</span><span class="li-sub">Control what launches when Windows boots</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Debloating</span><span class="li-sub">Removes pre-installed bloatware and background telemetry</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">System Restore</span><span class="li-sub">Create and manage safe rollback points</span></div></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Free updates</span><span class="li-sub">Every update to this version, at no extra cost</span></div></li>
-        </ul>
-        <p class="price-footnote">Windows 10 &amp; 11 · 64-bit · Activates on one PC, license transferable if you upgrade hardware.</p>
-        <a class="btn btn-primary form-submit" href="fixcore-2-1.html" style="text-decoration:none;">
-          Get FixCore 2.1
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-        </a>
-      </div>
+      <ul class="feature-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">PC Scan</span><span class="li-sub">Full system sweep that flags issues in under a minute</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">General Tweaks</span><span class="li-sub">Everyday settings that make Windows feel snappier</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Fix &amp; Repair</span><span class="li-sub">Resolves common Windows problems automatically</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Performance monitoring</span><span class="li-sub">Tracks CPU, GPU, RAM and disk over time</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">BIOS Optimization</span><span class="li-sub">Safe, reversible BIOS-level tuning for stability and speed</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Graphics Tweaks</span><span class="li-sub">GPU driver and rendering settings tuned for speed</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Game Boost</span><span class="li-sub">Frees up CPU and RAM the moment you launch a game</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Game Library</span><span class="li-sub">Per-game optimization profiles, applied automatically</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Networking</span><span class="li-sub">Lower latency and steadier connections</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Startup Apps</span><span class="li-sub">Control what launches when Windows boots</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Debloating</span><span class="li-sub">Removes pre-installed bloatware and background telemetry</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">System Restore</span><span class="li-sub">Create and manage safe rollback points</span></div></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg><div><span class="li-title">Free updates</span><span class="li-sub">Every update to this version, at no extra cost</span></div></li>
+      </ul>
 
-      <div class="price-card coming-soon">
-        <span class="tag soon">COMING SOON</span>
-        <h3>FixCore Ultimate</h3>
-        <div class="price">?</div>
-        <p class="desc" style="margin-bottom:0;flex:1;">The full toolkit, including live cloud sync.</p>
-        <button class="btn btn-ghost form-submit" disabled>Coming soon</button>
+      <div class="about-block">
+        <h3>What's in FixCore 2.1</h3>
+        <p>FixCore scans your hardware, flags what's slowing your PC down, and walks you through fixing it — no guesswork, no jargon. Version 2.1 is a one-time purchase that unlocks the full toolkit on one PC: everyday tweaks, BIOS-level tuning, GPU and networking settings, per-game optimization profiles, startup and bloat cleanup, and full system restore points, all in one app.</p>
+        <p>It's a single license, not a subscription — pay once and it's yours, including every update released for this version. After payment, your product key is delivered instantly through the FixCore bot in Discord.</p>
       </div>
     </div>
 
-    <div class="notready-cta" style="margin-top:60px;">
-      <div class="notready-cta-text">
-        <h3>Not sure which one you need?</h3>
-        <p>FixCore 2.1 covers everyday performance and repair. NettBoost and Ultimate are on the way — join the Discord to get notified the moment they launch.</p>
+    <div class="order-summary">
+      <h3>Order Summary <span class="stripe-note">🔒 Stripe secured</span></h3>
+
+      <div class="order-line">
+        <span class="name">FixCore 2.1</span>
+        <span><span class="price-now" id="orderPrice">$25</span></span>
       </div>
-      <a href="https://discord.gg/RJ9HhDkU8Q" target="_blank" rel="noopener" class="btn-discord-solid">Join Discord</a>
+
+      <button type="button" class="code-toggle" id="codeToggle">
+        <span>🏷️ Discount or referral code?</span>
+        <span id="codeToggleArrow">▾</span>
+      </button>
+
+      <div class="code-fields" id="codeFields">
+        <label for="discountCodeInput">Discount Code</label>
+        <div style="display:flex;gap:8px;align-items:stretch;margin-bottom:6px;">
+          <input type="text" id="discountCodeInput" placeholder="Enter code" autocomplete="off" spellcheck="false" style="text-transform:uppercase;flex:1;margin-bottom:0;">
+          <span id="discountAppliedPill" style="display:none;align-items:center;gap:5px;background:rgba(62,224,138,0.12);color:var(--ok);border:1px solid rgba(62,224,138,0.4);border-radius:9px;padding:0 12px;font-size:12.5px;font-weight:600;white-space:nowrap;">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            Applied
+          </span>
+        </div>
+        <div class="code-status" id="discountStatus"></div>
+
+        <label for="referralCodeInput">Referral Code</label>
+        <input type="text" id="referralCodeInput" placeholder="Enter referral code" autocomplete="off" spellcheck="false">
+        <div class="code-status" id="referralStatus"></div>
+      </div>
+
+      <div class="order-total">
+        <span class="label">Total</span>
+        <span class="amount" id="orderTotal">$25</span>
+      </div>
+
+      <button class="btn btn-primary" id="buyBtn">Proceed to Payment</button>
+
+      <div class="trust-strip">
+        <div class="item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          Instant access
+        </div>
+        <div class="item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Secure payment
+        </div>
+        <div class="item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Lifetime license
+        </div>
+      </div>
+
+      <p class="product-footnote" style="margin-top:14px;margin-bottom:0;">🔒 Secure via Stripe. Instant access after purchase.</p>
+      <p class="product-footnote">Windows 10 &amp; 11 · 64-bit · After payment you'll get a product key to redeem in Discord.</p>
+    </div>
     </div>
   </div>
 </main>
@@ -816,6 +821,216 @@
       document.getElementById('openLogin').addEventListener('click', function(){ openModal(); });
     }
   }
+
+  // ---------- order summary: discount/referral toggle ----------
+  var codeToggle = document.getElementById('codeToggle');
+  var codeFields = document.getElementById('codeFields');
+  var codeToggleArrow = document.getElementById('codeToggleArrow');
+  codeToggle.addEventListener('click', function(){
+    var isOpen = codeFields.classList.toggle('open');
+    codeToggleArrow.textContent = isOpen ? '▴' : '▾';
+  });
+
+  // Pre-fill the referral field from ?ref=... if someone arrived via a
+  // referral link, same param the affiliate dashboard hands out.
+  // ---------- referral link tracking ----------
+  // ?ref=name in the URL is remembered for 30 days in this browser, so the
+  // code is still applied if the visitor browses around before buying.
+  var REF_KEY = 'fixcore_ref';
+  var REF_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+  function cleanReferral(v){ return (v || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32); }
+  function getRememberedRef(){
+    try {
+      var saved = JSON.parse(localStorage.getItem(REF_KEY) || 'null');
+      if (saved && saved.code && (Date.now() - saved.ts) < REF_TTL_MS) return saved.code;
+    } catch (e) { /* ignore */ }
+    return '';
+  }
+  (function captureReferral(){
+    try {
+      var ref = cleanReferral(new URLSearchParams(location.search).get('ref'));
+      if (!ref) return;
+      localStorage.setItem(REF_KEY, JSON.stringify({ code: ref, ts: Date.now() }));
+      // Count the click once per browser per code (not on every page view).
+      var countedKey = 'fixcore_ref_counted_' + ref;
+      if (localStorage.getItem(countedKey)) return;
+      localStorage.setItem(countedKey, '1');
+      fetch(API_BASE + '/api/affiliate/click', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: ref })
+      }).catch(function(){ /* tracking must never break the page */ });
+    } catch (e) { /* localStorage unavailable — just skip tracking */ }
+  })();
+
+  var referralCodeInput = document.getElementById('referralCodeInput');
+  var referralStatus = document.getElementById('referralStatus');
+  var referralValid = null; // true / false once the server has answered, null = unknown
+  var referralCheckTimer = null;
+  var referralCheckSeq = 0;
+
+  function setReferralStatus(kind, text){
+    referralStatus.textContent = text || '';
+    referralStatus.classList.remove('ok', 'err');
+    referralStatus.classList.toggle('show', !!text);
+    if (kind) referralStatus.classList.add(kind);
+  }
+  // Same idea as the discount check: confirm with the server that the code
+  // belongs to a real affiliate, so typos are caught before paying.
+  function checkReferral(){
+    var code = cleanReferral(referralCodeInput.value);
+    clearTimeout(referralCheckTimer);
+    if (!code){ referralValid = null; setReferralStatus(null, ''); return; }
+    var seq = ++referralCheckSeq;
+    referralCheckTimer = setTimeout(function(){
+      fetch(API_BASE + '/api/affiliate/check?code=' + encodeURIComponent(code))
+        .then(function(res){ return res.json(); })
+        .then(function(data){
+          if (seq !== referralCheckSeq) return;
+          referralValid = !!(data && data.valid);
+          setReferralStatus(referralValid ? 'ok' : 'err',
+            referralValid ? 'Referral code applied.' : 'That referral code isn\'t valid.');
+        })
+        .catch(function(){
+          // Server unreachable — don't block checkout; it's re-validated when the sale is credited.
+          if (seq !== referralCheckSeq) return;
+          referralValid = null; setReferralStatus(null, '');
+        });
+    }, 350);
+  }
+  referralCodeInput.addEventListener('input', function(){
+    referralValid = null; setReferralStatus(null, ''); checkReferral();
+  });
+  // Arrived through someone's link (or visited one recently): pre-fill it
+  // and open the code section so it's visible that it's applied.
+  (function prefillReferral(){
+    var remembered = getRememberedRef();
+    if (!remembered) return;
+    referralCodeInput.value = remembered;
+    codeFields.classList.add('open');
+    codeToggleArrow.textContent = '\u25B4';
+    checkReferral();
+  })();
+
+  // ---------- discount code: real-time check against Stripe ----------
+  // The webhook/redeem-bot server holds the Stripe secret key, so the
+  // actual "is this a real, active code" check happens there — this page
+  // never trusts a code just because something was typed in.
+  var PROMO_CHECK_BASE = 'http://127.0.0.1:5050'; // for lokal testing — bytt til Railway-URL når du publiserer
+  var BASE_PRICE_CENTS = 2500;
+  var discountCodeInput = document.getElementById('discountCodeInput');
+  var discountStatus = document.getElementById('discountStatus');
+  var discountAppliedPill = document.getElementById('discountAppliedPill');
+  var orderTotalEl = document.getElementById('orderTotal');
+  var appliedDiscount = null; // {percent_off} or {amount_off, currency} once a code is confirmed valid
+  var discountCheckTimer = null;
+  var discountCheckSeq = 0;
+
+  function formatCents(cents){
+    return '$' + (cents / 100).toFixed(2).replace(/\.00$/, '');
+  }
+
+  function applyDiscountToTotal(){
+    if (!appliedDiscount){
+      orderTotalEl.textContent = formatCents(BASE_PRICE_CENTS);
+      return;
+    }
+    var finalCents = BASE_PRICE_CENTS;
+    if (appliedDiscount.percent_off){
+      finalCents = Math.round(BASE_PRICE_CENTS * (1 - appliedDiscount.percent_off / 100));
+    } else if (appliedDiscount.amount_off){
+      finalCents = Math.max(0, BASE_PRICE_CENTS - appliedDiscount.amount_off);
+    }
+    orderTotalEl.textContent = formatCents(finalCents);
+  }
+
+  function clearDiscountState(){
+    appliedDiscount = null;
+    discountAppliedPill.style.display = 'none';
+    discountStatus.classList.remove('show', 'ok', 'err');
+    discountStatus.textContent = '';
+    applyDiscountToTotal();
+  }
+
+  discountCodeInput.addEventListener('input', function(){
+    // Force uppercase as they type, cursor-safe (codes are short, so a
+    // full re-set on every keystroke is fine here).
+    var start = this.selectionStart, end = this.selectionEnd;
+    this.value = this.value.toUpperCase();
+    this.setSelectionRange(start, end);
+
+    var code = this.value.trim();
+    clearTimeout(discountCheckTimer);
+
+    if (!code){
+      clearDiscountState();
+      return;
+    }
+
+    var seq = ++discountCheckSeq;
+    discountCheckTimer = setTimeout(function(){
+      fetch(PROMO_CHECK_BASE + '/api/check-promo?code=' + encodeURIComponent(code))
+        .then(function(res){ return res.json(); })
+        .then(function(data){
+          if (seq !== discountCheckSeq) return; // a newer keystroke already superseded this check
+          if (data && data.valid){
+            appliedDiscount = data;
+            discountAppliedPill.style.display = 'inline-flex';
+            discountStatus.classList.remove('err');
+            discountStatus.classList.remove('show');
+            discountStatus.textContent = '';
+          } else {
+            appliedDiscount = null;
+            discountAppliedPill.style.display = 'none';
+            discountStatus.textContent = 'That code isn\'t valid.';
+            discountStatus.classList.add('show', 'err');
+            discountStatus.classList.remove('ok');
+          }
+          applyDiscountToTotal();
+        })
+        .catch(function(){
+          if (seq !== discountCheckSeq) return;
+          appliedDiscount = null;
+          discountAppliedPill.style.display = 'none';
+          discountStatus.textContent = 'Could not check that code right now.';
+          discountStatus.classList.add('show', 'err');
+          applyDiscountToTotal();
+        });
+    }, 450);
+  });
+
+  // ---------- buy button: require an email account, then Discord ----------
+  document.getElementById('buyBtn').addEventListener('click', function(){
+    if (!currentUser || !currentUser.email){
+      openModal('Create an account to continue — you\'ll link Discord right after.');
+      return;
+    }
+    if (!currentUser.discordLinked){
+      openModal();
+      showDiscordStep('One more step', "You're signed in, but this account isn't linked to Discord yet — that's what syncs your purchases and license. Authorize it now; you'll only need to do this once.");
+      return;
+    }
+    var referral = cleanReferral(referralCodeInput.value);
+    if (referral && referralValid === false){
+      codeFields.classList.add('open');
+      codeToggleArrow.textContent = '\u25B4';
+      showToast('That referral code isn\'t valid — fix or clear it to continue.');
+      return;
+    }
+    showToast('Redirecting to secure checkout…');
+    var stripeUrl = 'https://buy.stripe.com/4gM7sM3rz6vA74vaDa3VC02';
+    var params = new URLSearchParams();
+    var discount = document.getElementById('discountCodeInput').value.trim();
+    // client_reference_id is how Stripe ties this checkout back to the
+    // referrer — the backend reads it from the payment webhook and credits them.
+    if (referral) params.set('client_reference_id', referral);
+    // Stripe Payment Links can pre-fill a promo code the same way —
+    // if it's not a real code, the customer can still remove/edit it
+    // on Stripe's own page before paying.
+    if (discount) params.set('prefilled_promo_code', discount);
+    var query = params.toString();
+    window.location.href = stripeUrl + (query ? '?' + query : '');
+  });
 
   renderAuthNav();
 })();
