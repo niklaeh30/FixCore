@@ -916,7 +916,7 @@
   // The webhook/redeem-bot server holds the Stripe secret key, so the
   // actual "is this a real, active code" check happens there — this page
   // never trusts a code just because something was typed in.
-  var PROMO_CHECK_BASE = 'https://worker-production-8250.up.railway.app'; // for lokal testing — bytt til Railway-URL når du publiserer
+  var PROMO_CHECK_BASE = API_BASE; // the accounts server checks the code against Stripe
   var BASE_PRICE_CENTS = 2500;
   var discountCodeInput = document.getElementById('discountCodeInput');
   var discountStatus = document.getElementById('discountStatus');
@@ -970,7 +970,7 @@
     var seq = ++discountCheckSeq;
     discountCheckTimer = setTimeout(function(){
       fetch(PROMO_CHECK_BASE + '/api/check-promo?code=' + encodeURIComponent(code))
-        .then(function(res){ return res.json(); })
+        .then(function(res){ if (!res.ok) throw new Error('promo check failed'); return res.json(); })
         .then(function(data){
           if (seq !== discountCheckSeq) return; // a newer keystroke already superseded this check
           if (data && data.valid){
