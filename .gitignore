@@ -1,0 +1,20 @@
+# Hemmeligheter - skal ALDRI på GitHub
+.env
+.env.*
+*.db
+
+# Python-mapper
+venv/
+.venv/
+.venv-1/
+__pycache__/
+
+# Backend-filer som ikke hører hjemme på nettsiden
+app.py
+database.py
+email_service.py
+check_promo_local.py
+webhook_server.py
+requirements.txt
+Procfile
+set_api_url.py

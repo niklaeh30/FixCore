@@ -916,7 +916,7 @@
   // The webhook/redeem-bot server holds the Stripe secret key, so the
   // actual "is this a real, active code" check happens there — this page
   // never trusts a code just because something was typed in.
-  var PROMO_CHECK_BASE = 'http://127.0.0.1:5050'; // for lokal testing — bytt til Railway-URL når du publiserer
+  var PROMO_CHECK_BASE = 'https://worker-production-8250.up.railway.app'; // for lokal testing — bytt til Railway-URL når du publiserer
   var BASE_PRICE_CENTS = 2500;
   var discountCodeInput = document.getElementById('discountCodeInput');
   var discountStatus = document.getElementById('discountStatus');
