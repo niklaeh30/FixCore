@@ -2065,9 +2065,28 @@
       .catch(function(){ return null; });
   }
 
+  // For email logins there is no live Discord token to check roles with, so
+  // the accounts server asks Discord (using the FixCore bot) on our behalf.
+  function fetchOwnedFromServer(){
+    return fetch(API_BASE + '/api/me/products', { headers: { 'Authorization': 'Bearer ' + currentUser.authToken } })
+      .then(function(res){
+        return res.json().then(function(data){
+          if (!res.ok) throw new Error((data && data.error) || 'products lookup failed');
+          return data;
+        });
+      });
+  }
+
   function renderPurchases(){
     var body = document.getElementById('purchasesBody');
-    if (!currentUser.accessToken){
+    var useServer = !currentUser.accessToken && !!currentUser.authToken;
+    if (useServer && currentUser.discordLinked === false){
+      body.innerHTML =
+        '<p style="color:var(--sub-dim);">Link your Discord account to see your purchases.</p>' +
+        '<div class="row" style="margin-top:12px;"><a class="link-btn" href="fixcore-2-1.html">Browse products →</a></div>';
+      return;
+    }
+    if (!currentUser.accessToken && !useServer){
       // Session was restored from a previous visit (no live access token) —
       // can't re-verify roles without signing in again, so say so honestly
       // instead of guessing either way.
@@ -2077,7 +2096,11 @@
       return;
     }
     body.innerHTML = '<p style="color:var(--sub-dim);">Checking your Discord roles…</p>';
-    fetchOwnedProducts(currentUser.accessToken).then(function(owned){
+    (useServer ? fetchOwnedFromServer() : fetchOwnedProducts(currentUser.accessToken)).then(function(owned){
+      if (owned.discordLinked === false){
+        body.innerHTML = '<p style="color:var(--sub-dim);">Link your Discord account to see your purchases.</p>';
+        return;
+      }
       var ownsFixCore = owned.fixCore21;
       var ownsNettBoost = owned.nettBoost;
       var ownsUltimate = owned.fixCoreUltimate;
@@ -2117,7 +2140,7 @@
         body.innerHTML +=
           '<p style="margin-top:12px;">Your license key was sent via the FixCore bot in Discord — check your DMs or the redeem channel if you need it again.</p>' +
           '<div id="licenseKeyBox"></div>';
-        fetchLicenseKey(currentUser.accessToken).then(function(key){
+        (currentUser.accessToken ? fetchLicenseKey(currentUser.accessToken) : Promise.resolve(null)).then(function(key){
           if (!key) return;
           var box = document.getElementById('licenseKeyBox');
           if (!box) return;
