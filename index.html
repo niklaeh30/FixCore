@@ -1565,11 +1565,14 @@
       // Count the click once per browser per code (not on every page view).
       var countedKey = 'fixcore_ref_counted_' + ref;
       if (localStorage.getItem(countedKey)) return;
-      localStorage.setItem(countedKey, '1');
       fetch(API_BASE + '/api/affiliate/click', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: ref })
+      }).then(function(res){
+        // Only mark as counted once the server has actually accepted it, so a
+        // failed request (backend down, CORS, wiped database) is retried next visit.
+        if (res.ok) { try { localStorage.setItem(countedKey, '1'); } catch (e) {} }
       }).catch(function(){ /* tracking must never break the page */ });
     } catch (e) { /* localStorage unavailable — just skip tracking */ }
   })();
