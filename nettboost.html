@@ -720,6 +720,8 @@
       return;
     }
     try { sessionStorage.setItem('fixcoreLinkDiscord', '1'); } catch (e) { /* ignore */ }
+    // Remember where the person was, so we can send them back after Discord.
+    try { sessionStorage.setItem('fixcoreLinkReturn', location.pathname + location.search); } catch (e) { /* ignore */ }
     window.location.href = discordAuthorizeUrl();
   }
 
@@ -995,15 +997,35 @@
     }, 450);
   });
 
+  // A saved session can be missing the "Discord linked" flag (older sign-ins).
+  // Before sending anyone through Discord again, ask the server what's true.
+  function refreshDiscordLinked(done){
+    if (!currentUser || !currentUser.authToken){ done(false); return; }
+    fetch(API_BASE + '/api/me', { headers: { 'Authorization': 'Bearer ' + currentUser.authToken } })
+      .then(function(res){ return res.json().then(function(data){ return { ok: res.ok, data: data }; }); })
+      .then(function(result){
+        var linked = !!(result.ok && result.data && result.data.user && result.data.user.discordLinked);
+        if (linked){
+          currentUser.discordLinked = true;
+          try { localStorage.setItem(EMAIL_SESSION_KEY, JSON.stringify(currentUser)); } catch (e) { /* ignore */ }
+        }
+        done(linked);
+      })
+      .catch(function(){ done(false); });
+  }
+
   // ---------- buy button: require an email account, then Discord ----------
   document.getElementById('buyBtn').addEventListener('click', function(){
     if (!currentUser || !currentUser.email){
       openModal('Create an account to continue — you\'ll link Discord right after.');
       return;
     }
-    if (!currentUser.discordLinked){
-      openModal();
-      showDiscordStep('One more step', "You're signed in, but this account isn't linked to Discord yet — that's what syncs your purchases and license. Authorize it now; you'll only need to do this once.");
+    if (currentUser.discordLinked !== true){
+      refreshDiscordLinked(function(linked){
+        if (linked){ document.getElementById('buyBtn').click(); return; }
+        openModal();
+        showDiscordStep('One more step', "You're signed in, but this account isn't linked to Discord yet — that's what syncs your purchases and license. Authorize it now; you'll only need to do this once.");
+      });
       return;
     }
     var referral = cleanReferral(referralCodeInput.value);
@@ -1029,6 +1051,12 @@
   });
 
   renderAuthNav();
+  // A message left by the Discord-link redirect (it sends people back to the
+  // page they started on, so the toast has to survive the page change).
+  try {
+    var flash = sessionStorage.getItem('fixcoreFlash');
+    if (flash){ sessionStorage.removeItem('fixcoreFlash'); showToast(flash); }
+  } catch (e) { /* ignore */ }
 })();
 </script>
 
