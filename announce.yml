@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "FixCore-Setup.exe"
+      - "version.json"
 
 jobs:
   announce:
@@ -12,8 +13,25 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Read version.json and post to Discord
+      # Poster bare hvis "version" i version.json er endret siden forrige push
+      - name: Sjekk om versjonen er endret
+        id: ver
+        run: |
+          NEW=$(jq -r '.version' version.json)
+          OLD=$(git show "${{ github.event.before }}:version.json" 2>/dev/null | jq -r '.version' 2>/dev/null || echo "")
+          echo "ny=$NEW gammel=$OLD"
+          if [ "$NEW" != "$OLD" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Versjonen er lik - ingen melding sendes."
+          fi
+
+      - name: Post til Discord
+        if: steps.ver.outputs.changed == 'true'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
@@ -23,27 +41,21 @@ jobs:
           TYPE=$(jq -r '.type // "update"' version.json)
 
           case "$TYPE" in
-            update)       EMOJI="🚀"; LABEL="Update";       COLOR=3062015  ;;
-            bug_fix)      EMOJI="🐛"; LABEL="Bug Fix";      COLOR=3066993  ;;
-            feature)      EMOJI="✨"; LABEL="New Feature";  COLOR=9109247  ;;
-            maintenance)  EMOJI="🛠️"; LABEL="Maintenance";  COLOR=15105570 ;;
-            important)    EMOJI="⚠️"; LABEL="Important";    COLOR=15158332 ;;
-            *)            EMOJI="📢"; LABEL="Announcement"; COLOR=3062015  ;;
+            update)      EMOJI="🚀"; COLOR=3062015 ;;
+            bug_fix)     EMOJI="🐛"; COLOR=3066993 ;;
+            feature)     EMOJI="✨"; COLOR=9109247 ;;
+            maintenance) EMOJI="🛠️"; COLOR=15105570 ;;
+            important)   EMOJI="⚠️"; COLOR=15158332 ;;
+            *)           EMOJI="📢"; COLOR=3062015 ;;
           esac
 
-          curl -sf -X POST "$DISCORD_WEBHOOK_URL" \
-            -H "Content-Type: application/json" \
-            -d @- <<EOF
-          {
-            "content": "@everyone",
-            "embeds": [
-              {
-                "title": "${EMOJI} FixCore ${VERSION} — ${LABEL}",
-                "description": "${CHANGELOG}\n\n[⬇️ Download here](${DOWNLOAD_URL})",
-                "color": ${COLOR},
-                "footer": { "text": "FixCore • ${LABEL} • ${VERSION}" },
-                "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-              }
-            ]
-          }
-          EOF
+          jq -n \
+            --arg title "$EMOJI FixCore $VERSION is out now!" \
+            --arg desc "$CHANGELOG
+
+[⬇️ Download here]($DOWNLOAD_URL)" \
+            --arg footer "FixCore • Release $VERSION" \
+            --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --argjson color "$COLOR" \
+            '{content: "@everyone", embeds: [{title: $title, description: $desc, color: $color, footer: {text: $footer}, timestamp: $ts}]}' \
+          | curl -sf -X POST "$DISCORD_WEBHOOK_URL" -H "Content-Type: application/json" -d @-
