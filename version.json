@@ -1,7 +1,15 @@
 {
+<<<<<<< HEAD
    {
      "version": "2.1.v2",
      "type": "update",
      "changelog": "Faster Networking, smoother loading, in-app updates and a more reliable Discord sign-in.",
      "download_url": "https://fixcorepc.com/download.html"
    }
+=======
+  "version": "2.1.v2",
+  "type": "update",
+  "changelog": "better ui.",
+  "download_url": "https://fixcorepc.com/download.html"
+}
+>>>>>>> e1fa739ddab8a95782bca017b5f48b7fd169aad0
