@@ -1,6 +1,6 @@
    {
      "version": "2.1.v6",
-     "type": "update",
-     "changelog": "remove ramme rund appen",
+     "type": "bug",
+     "changelog": "appe kan not open",
      "download_url": "https://fixcorepc.com/download.html"
    }
