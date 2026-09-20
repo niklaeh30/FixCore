@@ -760,10 +760,6 @@
     authSubmitBtn.disabled = true;
     authSubmitBtn.textContent = authMode === 'login' ? 'Signing in…' : 'Creating account…';
 
-    if (authMode === 'signup'){
-      discordLinkPopup = window.open('about:blank', 'fixcoreDiscordAuth');
-    }
-
     var endpoint = authMode === 'login' ? '/api/login' : '/api/register';
     fetch(API_BASE + endpoint, {
       method: 'POST',

@@ -1706,13 +1706,6 @@
     authSubmitBtn.disabled = true;
     authSubmitBtn.textContent = authMode === 'login' ? 'Signing in…' : 'Creating account…';
 
-    // Open the popup synchronously, right in this click handler (only
-    // needed for signup, which always prompts to link Discord next) —
-    // browsers block window.open() once it's inside a .then() callback,
-    // since that no longer counts as a direct response to the click.
-    if (authMode === 'signup'){
-      discordLinkPopup = window.open('about:blank', 'fixcoreDiscordAuth');
-    }
 
     var endpoint = authMode === 'login' ? '/api/login' : '/api/register';
     fetch(API_BASE + endpoint, {
@@ -2050,7 +2043,6 @@
   var discordLinkBannerBtn = document.getElementById('discordLinkBannerBtn');
   if (discordLinkBannerBtn){
     discordLinkBannerBtn.addEventListener('click', function(){
-      discordLinkPopup = window.open('about:blank', 'fixcoreDiscordAuth');
       startDiscordLink();
     });
   }
