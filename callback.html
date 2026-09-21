@@ -1984,9 +1984,8 @@
       .then(function(result){
         var d = result.data || {};
         if (!result.ok){
-          showMsg(result.status === 401
-            ? 'Your session expired — sign out and back in to see your referral stats.'
-            : 'Could not load your referral stats right now. Try again in a moment.');
+          if (result.status === 401){ expireSession(); return; }
+          showMsg('Could not load your referral stats right now. Try again in a moment.');
           return;
         }
         if (d.discordLinked === false){
@@ -2042,7 +2041,7 @@
     return fetch(API_BASE + '/api/me/products', { headers: { 'Authorization': 'Bearer ' + currentUser.authToken } })
       .then(function(res){
         return res.json().then(function(data){
-          if (!res.ok) throw new Error((data && data.error) || 'products lookup failed');
+          if (!res.ok){ var err = new Error((data && data.error) || 'products lookup failed'); err.status = res.status; throw err; }
           return data;
         });
       });
@@ -2125,11 +2124,28 @@
           });
         });
       }
-    }).catch(function(){
+    }).catch(function(err){
+      if (err && err.status === 401){ expireSession(); return; }
       body.innerHTML =
         '<p style="color:var(--sub-dim);">Couldn\'t verify your purchase status right now — try again shortly.</p>' +
         '<div class="row" style="margin-top:12px;"><a class="link-btn" href="fixcore-2-1.html">Browse products →</a></div>';
     });
+  }
+
+  // The server rejected our saved login token (expired, or the account no
+  // longer exists on the server). Sign out locally and ask for a fresh login
+  // instead of leaving the person stuck on an error message.
+  function expireSession(){
+    currentUser = null;
+    try { localStorage.removeItem(DISCORD_SESSION_KEY); } catch (e) { /* ignore */ }
+    try { localStorage.removeItem('fixcore_email_user'); } catch (e) { /* ignore */ }
+    renderAuthNav();
+    renderDashboard();
+    renderCtas();
+    accountOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+    openModal();
+    showToast('Your session expired — please sign in again.');
   }
 
   function closeAccount(){ accountOverlay.classList.remove('open'); document.body.style.overflow = ''; }

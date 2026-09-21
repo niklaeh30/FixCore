@@ -15,7 +15,12 @@ import sqlite3
 import os
 from datetime import datetime, timezone
 
-DATABASE_PATH = os.environ.get("DATABASE_PATH", "fixcore_accounts.db")
+# If a Railway Volume is mounted at /data, use it automatically so accounts
+# survive redeploys even when DATABASE_PATH was forgotten. (A wiped database
+# is what makes old login tokens suddenly return "session expired".)
+_default_db = "/data/fixcore_accounts.db" if os.path.isdir("/data") else "fixcore_accounts.db"
+DATABASE_PATH = os.environ.get("DATABASE_PATH", _default_db)
+print(f"[database] using {DATABASE_PATH}")
 
 
 def get_connection():
