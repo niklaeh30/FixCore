@@ -22,6 +22,9 @@ ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "").spli
 CORS(app, origins=ALLOWED_ORIGINS or "*")
 
 JWT_SECRET = os.environ.get("JWT_SECRET")
+if not JWT_SECRET:
+    # Without this every login token is unusable — fail loudly at startup.
+    raise RuntimeError("JWT_SECRET is not set. Add it as an environment variable (Railway -> Variables).")
 JWT_ALGORITHM = "HS256"
 TOKEN_LIFETIME_DAYS = 30
 
@@ -34,6 +37,14 @@ EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
 AFFILIATE_PERCENT = int(os.environ.get("AFFILIATE_COMMISSION_PERCENT", "10"))
 SITE_URL = os.environ.get("SITE_URL", "https://fixcorepc.com").rstrip("/")
+
+# --- purchase lookup (which products does this account own?) ---
+# The FixCore bot must be a member of the server. Set DISCORD_BOT_TOKEN on Railway.
+DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
+DISCORD_GUILD_ID = os.environ.get("DISCORD_GUILD_ID", "1538214452191826122")
+FIXCORE_2_1_ROLE_IDS = ["1540798693123559474", "1538255411298304010"]
+NETTBOOST_ROLE_ID = "1545452018313732116"
+FIXCORE_ULTIMATE_ROLE_ID = "1549807754690957432"
 
 database.init_db()
 
@@ -119,6 +130,47 @@ def me():
     if not user:
         return jsonify({"error": "Not signed in."}), 401
     return jsonify({"user": public_user(user)})
+
+
+@app.route("/api/me/products", methods=["GET"])
+def me_products():
+    """
+    Which FixCore products the signed-in account owns, based on the Discord
+    roles of the linked Discord account. Email logins have no live Discord
+    token, so we ask Discord with the bot token instead.
+    """
+    user = get_user_from_request()
+    if not user:
+        return jsonify({"error": "Not signed in."}), 401
+    if not user.get("discord_id"):
+        return jsonify({"discordLinked": False})
+    if not DISCORD_BOT_TOKEN:
+        return jsonify({"error": "Purchase lookup is not configured (DISCORD_BOT_TOKEN missing)."}), 503
+
+    try:
+        response = requests.get(
+            f"https://discord.com/api/v10/guilds/{DISCORD_GUILD_ID}/members/{user['discord_id']}",
+            headers={"Authorization": f"Bot {DISCORD_BOT_TOKEN}"},
+            timeout=10,
+        )
+    except requests.RequestException:
+        return jsonify({"error": "Could not reach Discord."}), 502
+
+    if response.status_code == 404:
+        # Linked Discord account isn't in the FixCore server -> owns nothing.
+        roles = []
+    elif response.ok:
+        roles = response.json().get("roles") or []
+    else:
+        print(f"[products] discord lookup failed: {response.status_code} {response.text[:200]}")
+        return jsonify({"error": "Could not verify roles with Discord."}), 502
+
+    return jsonify({
+        "discordLinked": True,
+        "fixCore21": any(r in roles for r in FIXCORE_2_1_ROLE_IDS),
+        "nettBoost": NETTBOOST_ROLE_ID in roles,
+        "fixCoreUltimate": FIXCORE_ULTIMATE_ROLE_ID in roles,
+    })
 
 
 @app.route("/api/link-discord", methods=["POST"])
