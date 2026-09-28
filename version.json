@@ -1,6 +1,6 @@
    {
-     "version": "2.1",
-     "type": "update ",
-     "changelog": "fix",
+     "version": "2.1.v2",
+     "type": "update",
+     "changelog": "Faster Networking, smoother loading, in-app updates and a more reliable Discord sign-in.",
      "download_url": "https://fixcorepc.com/download.html"
    }
