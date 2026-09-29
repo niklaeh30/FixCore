@@ -760,6 +760,22 @@ span.avatar-lg{display:flex;align-items:center;justify-content:center;background
 .payout-actions{display:flex;flex-wrap:wrap;gap:10px;}
 .payout-actions .btn{height:40px;padding:0 18px;font-size:14px;}
 
+.aff-amt.plus{color:var(--ok);}
+.admin-section{margin-top:44px;padding-top:30px;border-top:1px solid var(--line);}
+.admin-section h2{font-size:24px;margin-bottom:6px;}
+.admin-section > p{color:var(--text-2);margin-bottom:18px;}
+.acct-card{padding:16px 18px;margin-bottom:10px;border-radius:12px;border:1px solid var(--line-2);background:var(--panel-2);}
+.acct-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:10px;}
+.acct-top b{font-family:var(--font-display);font-size:17px;}
+.acct-top span{color:var(--text-3);font-size:13.5px;}
+.acct-stats{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13.5px;color:var(--text-2);margin-bottom:12px;}
+.acct-stats b{color:var(--text);font-family:var(--font-display);}
+.acct-grant{display:flex;flex-wrap:wrap;gap:8px;}
+.acct-grant input{height:40px;padding:0 12px;border-radius:var(--r-sm);border:1px solid var(--line-2);background:rgba(4,5,14,.6);color:var(--text);font:inherit;font-size:14px;}
+.acct-grant input[type=number]{width:120px;}
+.acct-grant input[type=text]{flex:1 1 200px;}
+.acct-grant .btn{height:40px;padding:0 18px;font-size:14px;}
+
 /* ---------- toast ---------- */
 .toast{
   position:fixed;left:50%;bottom:26px;z-index:1100;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);

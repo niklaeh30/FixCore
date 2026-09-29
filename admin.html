@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/fixcore.css?v=11">
+<link rel="stylesheet" href="assets/fixcore.css?v=12">
 </head>
 <body class="page-admin">
 <div class="page-bg" aria-hidden="true"></div>
@@ -34,6 +34,17 @@
     </div>
     <p class="admin-msg" id="adminMsg">Enter the admin token to see payout requests.</p>
     <div id="adminList"></div>
+
+    <section class="admin-section">
+      <h2>Give money to an account</h2>
+      <p>Adds to the account's affiliate balance right away, without the 14-day wait. They can spend it as a discount or cash it out.</p>
+      <div class="admin-bar">
+        <div class="field"><label for="acctSearch">Search by email or Discord name</label><input type="text" id="acctSearch" autocomplete="off" spellcheck="false"></div>
+        <button class="btn btn-ghost" id="acctSearchBtn" type="button">Search</button>
+      </div>
+      <p class="admin-msg" id="acctMsg"></p>
+      <div id="acctList"></div>
+    </section>
   </div>
 </main>
 <script>
@@ -84,10 +95,53 @@
       .then(function(r){ if (!r.ok) window.alert((r.d && r.d.error) || 'Could not update.'); load(); })
       .catch(function(){ window.alert('Could not reach the server.'); btn.disabled = false; });
   });
-  document.getElementById('adminLoad').addEventListener('click', load);
+  // ---------- give money to an account ----------
+  var acctList = document.getElementById('acctList');
+  var acctMsg = document.getElementById('acctMsg');
+  var acctSearch = document.getElementById('acctSearch');
+  function loadAccounts(){
+    acctMsg.textContent = 'Loading…'; acctList.innerHTML = '';
+    fetch(API_BASE + '/api/admin/accounts?q=' + encodeURIComponent(acctSearch.value.trim()), { headers: headers() })
+      .then(function(res){ return res.json().then(function(d){ return { ok: res.ok, d: d }; }); })
+      .then(function(r){
+        if (!r.ok){ acctMsg.textContent = (r.d && r.d.error) || 'Could not load accounts.'; return; }
+        var items = r.d.accounts || [];
+        acctMsg.textContent = items.length ? 'Showing ' + items.length + ' account' + (items.length === 1 ? '' : 's') + ' with Discord linked.' : 'No accounts with Discord linked match that.';
+        acctList.innerHTML = items.map(function(a){
+          return '<div class="acct-card"><div class="acct-top"><b>' + esc(a.discord_username || a.username) + '</b><span>' + esc(a.email) + '</span>' +
+            (a.code ? '<span>code: ' + esc(a.code) + '</span>' : '') + '</div>' +
+            '<div class="acct-stats"><span>Available <b>' + money(a.available) + '</b></span><span>Pending <b>' + money(a.pending) + '</b></span><span>Earned <b>' + money(a.earned) + '</b></span></div>' +
+            '<div class="acct-grant"><input type="number" min="0.01" step="0.01" placeholder="Amount $" aria-label="Amount in dollars">' +
+            '<input type="text" maxlength="200" placeholder="Note they will see (optional)" aria-label="Note">' +
+            '<button class="btn btn-primary" type="button" data-grant="' + a.id + '" data-name="' + esc(a.discord_username || a.username) + '">Add money</button></div></div>';
+        }).join('');
+      })
+      .catch(function(){ acctMsg.textContent = 'Could not reach the server.'; });
+  }
+  acctList.addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-grant]');
+    if (!btn) return;
+    var box = btn.parentNode;
+    var amount = parseFloat(box.querySelector('input[type=number]').value);
+    var note = box.querySelector('input[type=text]').value.trim();
+    if (!(amount > 0)){ window.alert('Enter an amount, like 5 or 2.50.'); return; }
+    if (!window.confirm('Add ' + money(amount) + ' to ' + btn.getAttribute('data-name') + '?')) return;
+    btn.disabled = true;
+    fetch(API_BASE + '/api/admin/accounts/' + btn.getAttribute('data-grant') + '/grant', { method: 'POST', headers: headers(), body: JSON.stringify({ amount: amount, note: note }) })
+      .then(function(res){ return res.json().then(function(d){ return { ok: res.ok, d: d }; }); })
+      .then(function(r){
+        if (!r.ok){ window.alert((r.d && r.d.error) || 'Could not add the money.'); btn.disabled = false; return; }
+        loadAccounts();
+      })
+      .catch(function(){ window.alert('Could not reach the server.'); btn.disabled = false; });
+  });
+  document.getElementById('acctSearchBtn').addEventListener('click', loadAccounts);
+  acctSearch.addEventListener('keydown', function(e){ if (e.key === 'Enter') loadAccounts(); });
+
+  document.getElementById('adminLoad').addEventListener('click', function(){ load(); loadAccounts(); });
   tokenInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') load(); });
   filter.addEventListener('change', function(){ if (tokenInput.value.trim()) load(); });
-  if (tokenInput.value.trim()) load();
+  if (tokenInput.value.trim()){ load(); loadAccounts(); }
 })();
 </script>
 </body>

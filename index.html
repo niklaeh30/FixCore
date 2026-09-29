@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/fixcore.css?v=11">
+<link rel="stylesheet" href="assets/fixcore.css?v=12">
 </head>
 <body class="page-index" id="top">
 <svg class="svg-defs" aria-hidden="true" focusable="false"><defs><linearGradient id="fxIcon" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#2ad4ff"/><stop offset=".55" stop-color="#3f7dff"/><stop offset="1" stop-color="#a64dff"/></linearGradient></defs></svg>
@@ -1263,7 +1263,7 @@
     });
   }
   function affStatusLabel(h){
-    return { pending: 'Processing', paid: 'Paid', rejected: 'Returned', active: 'Code', reserved: 'Creating' }[h.status] || h.status;
+    return { pending: 'Processing', paid: 'Paid', rejected: 'Returned', active: 'Code', reserved: 'Creating', granted: 'Added' }[h.status] || h.status;
   }
   function renderWallet(d){
     // An older server without the wallet sends no "pending" value: keep the panel hidden.
@@ -1285,11 +1285,13 @@
     var rows = (d.history || []).map(function(h){
       var what = h.kind === 'credit'
         ? 'Code <code>' + escHtml(h.code || '') + '</code> for ' + escHtml(AFF_NAMES[h.product] || h.product || '')
-        : 'Payout via ' + (h.method === 'bank' ? 'bank transfer' : 'PayPal');
+        : h.kind === 'grant'
+          ? 'Added by FixCore' + (h.note ? ': ' + escHtml(h.note) : '')
+          : 'Payout via ' + (h.method === 'bank' ? 'bank transfer' : 'PayPal');
       var end = (h.kind === 'credit' && h.status === 'active' && h.code && AFF_PAGES[h.product])
         ? '<a class="link-btn" href="' + AFF_PAGES[h.product] + '?credit=' + encodeURIComponent(h.code) + '&off=' + Math.round(Number(h.amount) * 100) + '">Use</a>'
         : '<span class="aff-status s-' + escHtml(h.status) + '">' + escHtml(affStatusLabel(h)) + '</span>';
-      return '<div class="aff-row"><span class="aff-what">' + what + '</span><span class="aff-amt">' + money(h.amount) + '</span>' + end + '</div>';
+      return '<div class="aff-row"><span class="aff-what">' + what + '</span><span class="aff-amt' + (h.kind === 'grant' ? ' plus' : '') + '">' + (h.kind === 'grant' ? '+' : '') + money(h.amount) + '</span>' + end + '</div>';
     }).join('');
     affHistory.innerHTML = rows ? '<div class="aff-history-title">History</div>' + rows : '';
   }
@@ -1643,6 +1645,6 @@
   } catch (e) { /* ignore */ }
 })();
 </script>
-<script src="assets/fixcore-shell.js?v=11"></script>
+<script src="assets/fixcore-shell.js?v=12"></script>
 </body>
 </html>
