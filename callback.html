@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/fixcore.css?v=9">
+<link rel="stylesheet" href="assets/fixcore.css?v=10">
 </head>
 <body class="page-callback" id="top">
 <svg class="svg-defs" aria-hidden="true" focusable="false"><defs><linearGradient id="fxIcon" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#2ad4ff"/><stop offset=".55" stop-color="#3f7dff"/><stop offset="1" stop-color="#a64dff"/></linearGradient></defs></svg>
@@ -559,12 +559,12 @@
         Affiliate Program
         <span class="account-badge-live">LIVE</span>
       </h4>
-      <p style="margin-bottom:16px;">Refer friends and earn <strong id="affiliatePercent">10%</strong> of every sale made with your link or code. Your code is simply your Discord name — no signup needed.</p>
+      <p style="margin-bottom:16px;">Refer friends and earn <strong data-aff-rate="fixcore">$1.00</strong> for every FixCore 2.1 sale and <strong data-aff-rate="nettboost">$0.80</strong> for every NettBoost sale made with your link or code. Your code is simply your Discord name — no signup needed.</p>
       <div class="affiliate-msg" id="affiliateMsg">Loading your referral stats…</div>
       <div class="affiliate-live" id="affiliateReady" style="display:none;">
         <div class="affiliate-tier">
           <span class="icon-circle"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M17 4H7v5a5 5 0 0 0 10 0V4z"/><path d="M17 5h3a2 2 0 0 1 0 4h-1M7 5H4a2 2 0 0 0 0 4h1"/></svg></span>
-          <div><div class="title">Starter Affiliate</div><div class="sub" id="affiliateTierSub">10% commission</div></div>
+          <div><div class="title">Starter Affiliate</div><div class="sub"><span data-aff-rate="fixcore">$1.00</span> per FixCore 2.1, <span data-aff-rate="nettboost">$0.80</span> per NettBoost</div></div>
         </div>
         <div class="affiliate-stats">
           <div class="affiliate-stat">
@@ -1219,8 +1219,12 @@
           showMsg('Link your Discord account first (use the banner above) — your referral code is your Discord name.');
           return;
         }
-        document.getElementById('affiliatePercent').textContent = d.percent + '%';
-        document.getElementById('affiliateTierSub').textContent = d.percent + '% commission';
+        if (d.rates){
+          [].forEach.call(document.querySelectorAll('[data-aff-rate]'), function(el){
+            var v = d.rates[el.getAttribute('data-aff-rate')];
+            if (typeof v === 'number' && v > 0) el.textContent = money(v);
+          });
+        }
         document.getElementById('affClicks').textContent = d.clicks;
         document.getElementById('affSales').textContent = d.sales;
         document.getElementById('affEarned').textContent = money(d.earned);
@@ -1450,6 +1454,6 @@
   } catch (e) { /* ignore */ }
 })();
 </script>
-<script src="assets/fixcore-shell.js?v=9"></script>
+<script src="assets/fixcore-shell.js?v=10"></script>
 </body>
 </html>
