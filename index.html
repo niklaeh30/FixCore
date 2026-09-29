@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/fixcore.css?v=10">
+<link rel="stylesheet" href="assets/fixcore.css?v=11">
 </head>
 <body class="page-index" id="top">
 <svg class="svg-defs" aria-hidden="true" focusable="false"><defs><linearGradient id="fxIcon" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#2ad4ff"/><stop offset=".55" stop-color="#3f7dff"/><stop offset="1" stop-color="#a64dff"/></linearGradient></defs></svg>
@@ -580,8 +580,42 @@
           </div>
           <div class="affiliate-stat">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
-            <div class="val" id="affBalance">—</div><div class="lbl">Balance</div>
+            <div class="val" id="affBalance">—</div><div class="lbl">Available</div>
           </div>
+        </div>
+        <div class="aff-wallet" id="affWallet" hidden>
+          <p class="aff-pending" id="affPendingNote"></p>
+          <div class="aff-wallet-btns">
+            <button type="button" class="btn btn-primary" id="affUseBtn">Use as discount</button>
+            <button type="button" class="btn btn-ghost" id="affPayoutBtn">Request payout</button>
+          </div>
+          <p class="aff-hint" id="affWalletHint"></p>
+          <div class="aff-panel" id="affUsePanel" hidden>
+            <p>Turn your available balance into a one-time discount code. Pick what you want to buy:</p>
+            <div class="aff-choice">
+              <button type="button" class="aff-option" data-product="fixcore"><b>FixCore 2.1</b><span>Up to $24.50 off</span></button>
+              <button type="button" class="aff-option" data-product="nettboost"><b>NettBoost</b><span>Up to $4.50 off</span></button>
+            </div>
+            <p class="aff-note">Only what the product costs is used, the rest stays in your balance. Stripe takes one code per order, so it can't be combined with another discount code.</p>
+          </div>
+          <div class="aff-panel" id="affPayoutPanel" hidden>
+            <div class="aff-tabs" role="tablist" aria-label="Payout method">
+              <button type="button" class="aff-tab active" role="tab" aria-selected="true" data-method="paypal">PayPal</button>
+              <button type="button" class="aff-tab" role="tab" aria-selected="false" data-method="bank">Bank transfer</button>
+            </div>
+            <div data-for="paypal">
+              <div class="field"><label for="affPaypalEmail">PayPal email</label><input type="email" id="affPaypalEmail" autocomplete="email" placeholder="you@example.com"></div>
+            </div>
+            <div data-for="bank" hidden>
+              <div class="field"><label for="affBankHolder">Account holder name</label><input type="text" id="affBankHolder" autocomplete="name"></div>
+              <div class="field"><label for="affBankAccount">Account number or IBAN</label><input type="text" id="affBankAccount" autocomplete="off" spellcheck="false"></div>
+              <div class="field"><label for="affBankSwift">SWIFT/BIC <span class="opt">(only for accounts outside Norway)</span></label><input type="text" id="affBankSwift" autocomplete="off" spellcheck="false"></div>
+            </div>
+            <p class="aff-error" id="affPayoutError"></p>
+            <button type="button" class="btn btn-primary form-submit" id="affPayoutSubmit">Request payout</button>
+            <p class="aff-note">Your whole available balance is paid out. Payouts are sent manually by the FixCore team.</p>
+          </div>
+          <div class="aff-history" id="affHistory"></div>
         </div>
         <div class="affiliate-field">
           <label>Your referral link</label>
@@ -1203,6 +1237,122 @@
   // The referral code is the person's Discord name and is created by the
   // backend automatically the first time this loads — nothing to sign up for.
   function money(n){ return '$' + Number(n || 0).toFixed(2); }
+
+  // ---------- affiliate wallet: spend the balance as a discount, or request a payout ----------
+  var AFF_PAGES = { fixcore: 'fixcore-2-1.html', nettboost: 'nettboost.html' };
+  var AFF_NAMES = { fixcore: 'FixCore 2.1', nettboost: 'NettBoost' };
+  var affWallet = document.getElementById('affWallet');
+  var affUseBtn = document.getElementById('affUseBtn');
+  var affPayoutBtn = document.getElementById('affPayoutBtn');
+  var affUsePanel = document.getElementById('affUsePanel');
+  var affPayoutPanel = document.getElementById('affPayoutPanel');
+  var affWalletHint = document.getElementById('affWalletHint');
+  var affPendingNote = document.getElementById('affPendingNote');
+  var affHistory = document.getElementById('affHistory');
+  var affPayoutSubmit = document.getElementById('affPayoutSubmit');
+  var affPayoutError = document.getElementById('affPayoutError');
+  var affPayoutMethod = 'paypal';
+
+  function affPost(path, body){
+    return fetch(API_BASE + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentUser.authToken },
+      body: JSON.stringify(body || {})
+    }).then(function(res){
+      return res.json().catch(function(){ return {}; }).then(function(data){ return { ok: res.ok, data: data }; });
+    });
+  }
+  function affStatusLabel(h){
+    return { pending: 'Processing', paid: 'Paid', rejected: 'Returned', active: 'Code', reserved: 'Creating' }[h.status] || h.status;
+  }
+  function renderWallet(d){
+    // An older server without the wallet sends no "pending" value: keep the panel hidden.
+    if (typeof d.pending === 'undefined'){ affWallet.hidden = true; return; }
+    affWallet.hidden = false;
+    var available = Number(d.balance || 0);
+    var payoutMin = Number(d.payoutMin || 10);
+    var creditMin = Number(d.creditMin || 1);
+    var hold = d.holdDays || 14;
+    affPendingNote.innerHTML = (Number(d.pending) > 0 ? '<b>' + money(d.pending) + '</b> pending. ' : '') +
+      'Commissions unlock ' + hold + ' days after each sale.';
+    affUseBtn.disabled = available < creditMin;
+    affPayoutBtn.disabled = available < payoutMin || !!d.hasPendingPayout;
+    affWalletHint.textContent = d.hasPendingPayout ? 'Your payout request is being processed.'
+      : (available < payoutMin ? 'Payouts unlock at ' + money(payoutMin) + ' available.' : '');
+    affPayoutSubmit.textContent = 'Request ' + money(available) + ' payout';
+    if (affUseBtn.disabled) affUsePanel.hidden = true;
+    if (affPayoutBtn.disabled) affPayoutPanel.hidden = true;
+    var rows = (d.history || []).map(function(h){
+      var what = h.kind === 'credit'
+        ? 'Code <code>' + escHtml(h.code || '') + '</code> for ' + escHtml(AFF_NAMES[h.product] || h.product || '')
+        : 'Payout via ' + (h.method === 'bank' ? 'bank transfer' : 'PayPal');
+      var end = (h.kind === 'credit' && h.status === 'active' && h.code && AFF_PAGES[h.product])
+        ? '<a class="link-btn" href="' + AFF_PAGES[h.product] + '?credit=' + encodeURIComponent(h.code) + '&off=' + Math.round(Number(h.amount) * 100) + '">Use</a>'
+        : '<span class="aff-status s-' + escHtml(h.status) + '">' + escHtml(affStatusLabel(h)) + '</span>';
+      return '<div class="aff-row"><span class="aff-what">' + what + '</span><span class="aff-amt">' + money(h.amount) + '</span>' + end + '</div>';
+    }).join('');
+    affHistory.innerHTML = rows ? '<div class="aff-history-title">History</div>' + rows : '';
+  }
+  affUseBtn.addEventListener('click', function(){ affUsePanel.hidden = !affUsePanel.hidden; affPayoutPanel.hidden = true; });
+  affPayoutBtn.addEventListener('click', function(){ affPayoutPanel.hidden = !affPayoutPanel.hidden; affUsePanel.hidden = true; });
+  [].forEach.call(affUsePanel.querySelectorAll('.aff-option'), function(btn){
+    btn.addEventListener('click', function(){
+      var product = btn.getAttribute('data-product');
+      var options = affUsePanel.querySelectorAll('.aff-option');
+      [].forEach.call(options, function(o){ o.disabled = true; });
+      btn.classList.add('is-busy');
+      affPost('/api/affiliate/use-credit', { product: product })
+        .then(function(r){
+          if (!r.ok){ showToast((r.data && r.data.error) || 'Could not create your discount code.'); return; }
+          showToast('Code ' + r.data.code + ' created. Taking you to checkout…');
+          setTimeout(function(){
+            location.href = AFF_PAGES[product] + '?credit=' + encodeURIComponent(r.data.code) + '&off=' + r.data.amountCents;
+          }, 900);
+        })
+        .catch(function(){ showToast('Could not reach the server. Try again in a moment.'); })
+        .then(function(){
+          btn.classList.remove('is-busy');
+          [].forEach.call(options, function(o){ o.disabled = false; });
+          renderAffiliate();
+        });
+    });
+  });
+  [].forEach.call(affPayoutPanel.querySelectorAll('.aff-tab'), function(tab){
+    tab.addEventListener('click', function(){
+      affPayoutMethod = tab.getAttribute('data-method');
+      [].forEach.call(affPayoutPanel.querySelectorAll('.aff-tab'), function(t){
+        var on = t === tab;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      [].forEach.call(affPayoutPanel.querySelectorAll('[data-for]'), function(f){ f.hidden = f.getAttribute('data-for') !== affPayoutMethod; });
+      affPayoutError.textContent = '';
+    });
+  });
+  affPayoutPanel.addEventListener('input', function(){ affPayoutError.textContent = ''; });
+  affPayoutSubmit.addEventListener('click', function(){
+    var body = { method: affPayoutMethod };
+    affPayoutError.textContent = '';
+    if (affPayoutMethod === 'paypal'){
+      body.paypalEmail = document.getElementById('affPaypalEmail').value.trim();
+      if (!body.paypalEmail){ affPayoutError.textContent = 'Enter the email of your PayPal account.'; return; }
+    } else {
+      body.holder = document.getElementById('affBankHolder').value.trim();
+      body.account = document.getElementById('affBankAccount').value.trim();
+      body.swift = document.getElementById('affBankSwift').value.trim();
+      if (!body.holder || !body.account){ affPayoutError.textContent = 'Enter the account holder and the account number.'; return; }
+    }
+    affPayoutSubmit.disabled = true;
+    affPost('/api/affiliate/payout', body)
+      .then(function(r){
+        if (!r.ok){ affPayoutError.textContent = (r.data && r.data.error) || 'Could not request the payout.'; return; }
+        affPayoutPanel.hidden = true;
+        showToast('Payout of ' + money(r.data.amount) + ' requested. We\'ll send it to you soon.');
+        renderAffiliate();
+      })
+      .catch(function(){ affPayoutError.textContent = 'Could not reach the server. Try again in a moment.'; })
+      .then(function(){ affPayoutSubmit.disabled = false; });
+  });
   function copyText(text, btn){
     function done(){
       showToast('Copied to clipboard');
@@ -1261,6 +1411,7 @@
         document.getElementById('affCode').textContent = d.code;
         msg.style.display = 'none';
         ready.style.display = '';
+        renderWallet(d);
       })
       .catch(function(){ showMsg('Could not reach the server. Try again in a moment.'); });
   }
@@ -1492,6 +1643,6 @@
   } catch (e) { /* ignore */ }
 })();
 </script>
-<script src="assets/fixcore-shell.js?v=10"></script>
+<script src="assets/fixcore-shell.js?v=11"></script>
 </body>
 </html>

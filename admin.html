@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payouts — FixCore admin</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#05060f">
+<link rel="icon" type="image/svg+xml" href="assets/fixcore-logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/fixcore.css?v=11">
+</head>
+<body class="page-admin">
+<div class="page-bg" aria-hidden="true"></div>
+<main id="main" class="page-main">
+  <div class="wrap" style="max-width:980px;">
+    <a class="brand" href="index.html" aria-label="FixCore home" style="margin-bottom:34px;display:inline-flex;">
+      <img class="brand-mark" src="assets/fixcore-logo.svg" alt="" width="34" height="28">
+      <span class="brand-word">FIX<span>CORE</span></span>
+    </a>
+    <div class="section-head" style="margin-bottom:30px;">
+      <span class="kicker">Admin</span>
+      <h1>Affiliate <span class="accent">payouts</span></h1>
+      <p>Send the money with PayPal or your bank, then mark the request as paid. Rejecting a request puts the amount back in the affiliate's balance.</p>
+    </div>
+    <div class="admin-bar">
+      <div class="field"><label for="adminToken">Admin token</label><input type="password" id="adminToken" autocomplete="off"></div>
+      <select id="adminFilter" aria-label="Show">
+        <option value="pending">Pending</option><option value="paid">Paid</option><option value="rejected">Rejected</option><option value="">All</option>
+      </select>
+      <button class="btn btn-primary" id="adminLoad" type="button">Load</button>
+    </div>
+    <p class="admin-msg" id="adminMsg">Enter the admin token to see payout requests.</p>
+    <div id="adminList"></div>
+  </div>
+</main>
+<script>
+(function(){
+  "use strict";
+  var API_BASE = 'https://web-production-fae792.up.railway.app';
+  var tokenInput = document.getElementById('adminToken');
+  var filter = document.getElementById('adminFilter');
+  var list = document.getElementById('adminList');
+  var msg = document.getElementById('adminMsg');
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function money(n){ return '$' + Number(n || 0).toFixed(2); }
+  try { tokenInput.value = sessionStorage.getItem('fixcoreAdminToken') || ''; } catch (e) {}
+  function headers(){ return { 'Content-Type': 'application/json', 'X-Admin-Token': tokenInput.value.trim() }; }
+  function row(label, value){ return value ? '<dt>' + esc(label) + '</dt><dd>' + esc(value) + '</dd>' : ''; }
+  function load(){
+    try { sessionStorage.setItem('fixcoreAdminToken', tokenInput.value.trim()); } catch (e) {}
+    msg.textContent = 'Loading…'; list.innerHTML = '';
+    fetch(API_BASE + '/api/admin/payouts?status=' + encodeURIComponent(filter.value), { headers: headers() })
+      .then(function(res){ return res.json().then(function(d){ return { ok: res.ok, d: d }; }); })
+      .then(function(r){
+        if (!r.ok){ msg.textContent = (r.d && r.d.error) || 'Could not load payouts.'; return; }
+        var items = r.d.payouts || [];
+        msg.textContent = items.length ? items.length + ' request' + (items.length === 1 ? '' : 's') : 'Nothing here.';
+        list.innerHTML = items.map(function(p){
+          var det = p.details || {};
+          var dl = p.method === 'paypal' ? row('PayPal', det.paypalEmail)
+            : row('Holder', det.holder) + row('Account', det.account) + row('SWIFT/BIC', det.swift);
+          var actions = p.status === 'pending'
+            ? '<div class="payout-actions"><button class="btn btn-primary" data-id="' + p.id + '" data-status="paid" type="button">Mark as paid</button>' +
+              '<button class="btn btn-ghost" data-id="' + p.id + '" data-status="rejected" type="button">Reject</button></div>' : '';
+          return '<div class="payout-card"><div class="payout-top"><span class="amt">' + money(p.amount) + '</span>' +
+            '<span class="who">#' + p.id + ' · ' + esc(p.code || p.username) + ' · ' + esc(p.email) + ' · ' + esc((p.created_at || '').slice(0, 10)) + '</span>' +
+            '<span class="aff-status s-' + esc(p.status) + '">' + esc(p.status) + '</span></div>' +
+            '<dl class="payout-details">' + row('Method', p.method === 'paypal' ? 'PayPal' : 'Bank transfer') + dl + '</dl>' + actions + '</div>';
+        }).join('');
+      })
+      .catch(function(){ msg.textContent = 'Could not reach the server.'; });
+  }
+  list.addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-id]');
+    if (!btn) return;
+    var status = btn.getAttribute('data-status');
+    if (!window.confirm(status === 'paid' ? 'Mark this payout as paid? Only do this after you have sent the money.' : 'Reject this payout? The amount goes back to their balance.')) return;
+    btn.disabled = true;
+    fetch(API_BASE + '/api/admin/payouts/' + btn.getAttribute('data-id'), { method: 'POST', headers: headers(), body: JSON.stringify({ status: status }) })
+      .then(function(res){ return res.json().then(function(d){ return { ok: res.ok, d: d }; }); })
+      .then(function(r){ if (!r.ok) window.alert((r.d && r.d.error) || 'Could not update.'); load(); })
+      .catch(function(){ window.alert('Could not reach the server.'); btn.disabled = false; });
+  });
+  document.getElementById('adminLoad').addEventListener('click', load);
+  tokenInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') load(); });
+  filter.addEventListener('change', function(){ if (tokenInput.value.trim()) load(); });
+  if (tokenInput.value.trim()) load();
+})();
+</script>
+</body>
+</html>

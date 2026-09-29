@@ -707,6 +707,59 @@ span.avatar-lg{display:flex;align-items:center;justify-content:center;background
 .affiliate-msg{color:var(--text-3);font-size:14.5px;}
 .key-row code{color:#8fd0ff;}
 
+/* ---------- affiliate wallet ---------- */
+.aff-wallet{margin:2px 0 18px;padding:16px;border:1px solid var(--line);border-radius:12px;background:rgba(4,5,14,.35);}
+.aff-pending{font-size:13.5px;color:var(--text-3);margin-bottom:12px;}
+.aff-pending b{color:var(--text);font-weight:600;}
+.aff-wallet-btns{display:flex;flex-wrap:wrap;gap:10px;}
+.aff-wallet-btns .btn{flex:1 1 160px;height:42px;padding:0 16px;font-size:14px;}
+.aff-hint{font-size:13px;color:var(--text-3);margin-top:10px;}
+.aff-hint:empty{display:none;}
+.aff-panel{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);}
+.aff-panel > p{font-size:14px;color:var(--text-2);margin-bottom:12px;}
+.aff-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.aff-option{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:14px;border-radius:10px;text-align:left;
+  border:1px solid var(--line-2);background:var(--panel);transition:border-color .15s ease,background .15s ease;}
+.aff-option:hover{border-color:rgba(98,182,255,.6);background:var(--panel-3);}
+.aff-option b{font-family:var(--font-display);font-size:15.5px;font-weight:600;color:var(--text);}
+.aff-option span{font-size:12.5px;color:var(--text-3);}
+.aff-option:disabled{opacity:.6;cursor:wait;}
+.aff-option.is-busy{border-color:var(--cyan);opacity:1;}
+.aff-note,.aff-panel > .aff-note{font-size:12.5px;color:var(--text-3);margin-top:12px;line-height:1.5;}
+.aff-tabs{display:flex;gap:4px;padding:4px;margin-bottom:16px;border-radius:11px;background:rgba(255,255,255,.04);border:1px solid var(--line);}
+.aff-tab{flex:1;height:36px;border-radius:8px;font-family:var(--font-display);font-size:14px;font-weight:600;color:var(--text-2);transition:background .15s ease,color .15s ease;}
+.aff-tab:hover{color:var(--text);}
+.aff-tab.active{color:#fff;background:linear-gradient(100deg,#1a74ff,#4f44ff);}
+.field .opt{font-weight:400;color:var(--text-3);}
+.aff-error,.aff-panel > .aff-error{font-size:13px;color:var(--danger);margin:-4px 0 10px;}
+.aff-error:empty{display:none;}
+.aff-history{margin-top:14px;}
+.aff-history:empty{display:none;}
+.aff-history-title{font-size:12.5px;color:var(--text-3);margin-bottom:4px;}
+.aff-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:13.5px;}
+.aff-what{flex:1;min-width:0;color:var(--text-2);overflow-wrap:anywhere;}
+.aff-what code{font-size:12px;color:#8fd0ff;}
+.aff-amt{font-family:var(--font-display);font-weight:600;color:var(--text);}
+.aff-status{font-size:12px;padding:3px 10px;border-radius:99px;border:1px solid var(--line-2);color:var(--text-2);white-space:nowrap;}
+.aff-status.s-pending{color:var(--warn);border-color:rgba(255,180,84,.4);}
+.aff-status.s-paid{color:var(--ok);border-color:rgba(53,224,140,.4);}
+
+/* ---------- admin payouts page ---------- */
+.admin-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:18px;}
+.admin-bar .field{margin:0;flex:1 1 240px;}
+.admin-bar select{height:46px;padding:0 12px;border-radius:var(--r-sm);border:1px solid var(--line-2);background:rgba(4,5,14,.6);color:var(--text);font:inherit;}
+.admin-msg{color:var(--text-3);margin-bottom:14px;}
+.payout-card{padding:18px 20px;margin-bottom:12px;border-radius:12px;border:1px solid var(--line-2);background:var(--panel-2);}
+.payout-top{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-bottom:10px;}
+.payout-top .amt{font-family:var(--font-display);font-size:22px;font-weight:700;}
+.payout-top .who{color:var(--text-2);font-size:14px;}
+.payout-top .aff-status{margin-left:auto;}
+.payout-details{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;font-size:14px;margin-bottom:14px;}
+.payout-details dt{color:var(--text-3);}
+.payout-details dd{font-family:var(--font-mono);color:var(--text);overflow-wrap:anywhere;}
+.payout-actions{display:flex;flex-wrap:wrap;gap:10px;}
+.payout-actions .btn{height:40px;padding:0 18px;font-size:14px;}
+
 /* ---------- toast ---------- */
 .toast{
   position:fixed;left:50%;bottom:26px;z-index:1100;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);
@@ -894,6 +947,7 @@ span.avatar-lg{display:flex;align-items:center;justify-content:center;background
   .fx-streaks::after{margin-left:35%;}
   .footer-grid{grid-template-columns:1fr;gap:30px;}
   .affiliate-stats{grid-template-columns:1fr 1fr;}
+  .aff-choice{grid-template-columns:1fr;}
   .modal{padding:38px 22px 24px;}
   .app-thumb,.nb-tile{flex:0 0 108px;}
   .product-switch{min-width:0;width:100%;}

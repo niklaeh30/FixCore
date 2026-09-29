@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/fixcore.css?v=10">
+<link rel="stylesheet" href="assets/fixcore.css?v=11">
 </head>
 <body class="page-fixcore-2-1" id="top">
 <svg class="svg-defs" aria-hidden="true" focusable="false"><defs><linearGradient id="fxIcon" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#2ad4ff"/><stop offset=".55" stop-color="#3f7dff"/><stop offset="1" stop-color="#a64dff"/></linearGradient></defs></svg>
@@ -692,6 +692,41 @@
     }, 450);
   });
 
+  // ---------- affiliate balance used as a discount (link from the account page) ----------
+  (function applyAffiliateCredit(){
+    var q = new URLSearchParams(location.search);
+    var code = (q.get('credit') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 40);
+    var off = parseInt(q.get('off'), 10);
+    if (!code || !(off > 0)) return;
+    // Stripe takes one code per order, so this replaces the launch offer.
+    document.documentElement.classList.add('promo-ended');
+    discountCodeInput.value = code;
+    discountCodeInput.readOnly = true;
+    discountCodeInput.classList.add('is-locked');
+    discountCodeInput.setAttribute('aria-readonly', 'true');
+    appliedDiscount = { valid: true, amount_off: Math.min(off, BASE_PRICE_CENTS) };
+    discountAppliedPill.style.display = 'inline-flex';
+    discountStatus.textContent = 'Affiliate balance applied, you save ' + formatCents(appliedDiscount.amount_off) + '.';
+    discountStatus.classList.remove('err');
+    discountStatus.classList.add('show', 'ok');
+    codeFields.classList.add('open');
+    codeToggleArrow.textContent = '\u25B4';
+    var line = document.createElement('div');
+    line.className = 'order-line discount-line';
+    var label = document.createElement('span');
+    label.textContent = 'Affiliate balance ';
+    var codeEl = document.createElement('code');
+    codeEl.textContent = code;
+    label.appendChild(codeEl);
+    var amount = document.createElement('span');
+    amount.textContent = '\u2212' + formatCents(appliedDiscount.amount_off);
+    line.appendChild(label);
+    line.appendChild(amount);
+    var priceEl = document.getElementById('orderPrice');
+    if (priceEl && priceEl.parentNode) priceEl.parentNode.insertAdjacentElement('afterend', line);
+    applyDiscountToTotal();
+  })();
+
   // ---------- launch offer: code is pre-applied, locked and green until it ends ----------
   // (code, amount and end time live in window.FC_PROMO in the <head>)
   (function applyLaunchOffer(){
@@ -782,6 +817,6 @@
   } catch (e) { /* ignore */ }
 })();
 </script>
-<script src="assets/fixcore-shell.js?v=10"></script>
+<script src="assets/fixcore-shell.js?v=11"></script>
 </body>
 </html>
