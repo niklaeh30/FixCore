@@ -20,7 +20,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/fixcore.css?v=8">
+<link rel="stylesheet" href="assets/fixcore.css?v=9">
 </head>
 <body class="page-index" id="top">
 <svg class="svg-defs" aria-hidden="true" focusable="false"><defs><linearGradient id="fxIcon" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#2ad4ff"/><stop offset=".55" stop-color="#3f7dff"/><stop offset="1" stop-color="#a64dff"/></linearGradient></defs></svg>
@@ -639,6 +639,13 @@
       if (savedEmailUser) currentUser = JSON.parse(savedEmailUser);
     }
   } catch (e) { /* localStorage unavailable or corrupted entry — just stay signed out */ }
+
+  // A half-finished sign-up (Discord never linked) is not a signed-in session,
+  // unless this page load is the Discord redirect that finishes it.
+  if (currentUser && currentUser.discordLinked === false && location.hash.indexOf('access_token') === -1){
+    currentUser = null;
+    try { localStorage.removeItem('fixcore_email_user'); } catch (e) { /* ignore */ }
+  }
   var cart = [];             // {plan, price}
 
   var DISCORD_CLIENT_ID = '1539670021532422154';
@@ -706,6 +713,7 @@
     document.body.style.overflow = 'hidden';
   }
   function closeModal(){
+    if (isDiscordStepOpen()) dropUnfinishedSignup();
     overlay.classList.remove('open');
     document.body.style.overflow = '';
   }
@@ -810,6 +818,25 @@
     renderAuthNav();
     renderDashboard();
     renderCtas();
+  }
+
+  // ---------- sign-up must finish with Discord ----------
+  // An email account only counts as signed in once Discord is linked.
+  // Closing the modal while it still asks for Discord signs the person out again.
+  function isDiscordStepOpen(){
+    var ov = document.getElementById('modalOverlay');
+    var panel = document.getElementById('discordStepPanel');
+    return !!(ov && panel && ov.classList.contains('open') && panel.style.display !== 'none');
+  }
+  function dropUnfinishedSignup(){
+    if (!currentUser || currentUser.discordLinked !== false) return;
+    currentUser = null;
+    try { localStorage.removeItem(EMAIL_SESSION_KEY); } catch (e) { /* ignore */ }
+    try { sessionStorage.removeItem('fixcoreLinkDiscord'); } catch (e) { /* ignore */ }
+    renderAuthNav();
+    if (typeof renderDashboard === 'function') renderDashboard();
+    if (typeof renderCtas === 'function') renderCtas();
+    showToast('Not signed in. Link Discord to finish setting up your account.');
   }
 
   var discordLinkPopup = null;
@@ -1211,8 +1238,9 @@
       .then(function(result){
         var d = result.data || {};
         if (!result.ok){
-          if (result.status === 401){ expireSession(); return; }
-          showMsg('Could not load your referral stats right now. Try again in a moment.');
+          showMsg(result.status === 401
+            ? 'Your session expired — sign out and back in to see your referral stats.'
+            : 'Could not load your referral stats right now. Try again in a moment.');
           return;
         }
         if (d.discordLinked === false){
@@ -1275,7 +1303,7 @@
     return fetch(API_BASE + '/api/me/products', { headers: { 'Authorization': 'Bearer ' + currentUser.authToken } })
       .then(function(res){
         return res.json().then(function(data){
-          if (!res.ok){ var err = new Error((data && data.error) || 'products lookup failed'); err.status = res.status; throw err; }
+          if (!res.ok) throw new Error((data && data.error) || 'products lookup failed');
           return data;
         });
       });
@@ -1358,28 +1386,11 @@
           });
         });
       }
-    }).catch(function(err){
-      if (err && err.status === 401){ expireSession(); return; }
+    }).catch(function(){
       body.innerHTML =
         '<p style="color:var(--sub-dim);">Couldn\'t verify your purchase status right now — try again shortly.</p>' +
         '<div class="row" style="margin-top:12px;"><a class="link-btn" href="fixcore-2-1.html">Browse products →</a></div>';
     });
-  }
-
-  // The server rejected our saved login token (expired, or the account no
-  // longer exists on the server). Sign out locally and ask for a fresh login
-  // instead of leaving the person stuck on an error message.
-  function expireSession(){
-    currentUser = null;
-    try { localStorage.removeItem(DISCORD_SESSION_KEY); } catch (e) { /* ignore */ }
-    try { localStorage.removeItem('fixcore_email_user'); } catch (e) { /* ignore */ }
-    renderAuthNav();
-    renderDashboard();
-    renderCtas();
-    accountOverlay.classList.remove('open');
-    document.body.style.overflow = '';
-    openModal();
-    showToast('Your session expired — please sign in again.');
   }
 
   function closeAccount(){ accountOverlay.classList.remove('open'); document.body.style.overflow = ''; }
@@ -1477,6 +1488,6 @@
   } catch (e) { /* ignore */ }
 })();
 </script>
-<script src="assets/fixcore-shell.js?v=8"></script>
+<script src="assets/fixcore-shell.js?v=9"></script>
 </body>
 </html>
