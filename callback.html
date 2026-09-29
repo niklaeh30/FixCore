@@ -1007,6 +1007,13 @@
     }
 
     if (!location.hash || location.hash.indexOf('access_token') === -1){
+      var adminAuthErr = false;
+      try { adminAuthErr = sessionStorage.getItem('fixcoreAdminAuth') === '1'; } catch (e) { /* ignore */ }
+      if (adminAuthErr && location.hash.indexOf('error=') !== -1){
+        try { sessionStorage.removeItem('fixcoreAdminAuth'); sessionStorage.setItem('fixcoreAdminAuthError', '1'); } catch (e) { /* ignore */ }
+        window.location.replace('admin.html');
+        return;
+      }
       if (location.hash.indexOf('error=') !== -1){
         showToast('Discord sign-in was cancelled.');
         history.replaceState(null, '', location.pathname + location.search);
@@ -1017,6 +1024,14 @@
     var token = hashParams.get('access_token');
     history.replaceState(null, '', location.pathname + location.search);
     if (!token) return;
+    // Admin page sign-in: admin.html sent this person through Discord, so hand the token back there.
+    var adminAuth = false;
+    try { adminAuth = sessionStorage.getItem('fixcoreAdminAuth') === '1'; sessionStorage.removeItem('fixcoreAdminAuth'); } catch (e) { /* ignore */ }
+    if (adminAuth){
+      try { sessionStorage.setItem('fixcoreAdminDiscordToken', token); } catch (e) { /* ignore */ }
+      window.location.replace('admin.html');
+      return;
+    }
 
     // Fallback path: only reached if the popup above got blocked and we
     // fell back to a full-page redirect (see startDiscordLink).
@@ -1363,6 +1378,7 @@
       .then(function(result){
         var d = result.data || {};
         if (!result.ok){
+          if (result.status === 401){ signOutExpired(); return; }
           showMsg(result.status === 401
             ? 'Your session expired — sign out and back in to see your referral stats.'
             : 'Could not load your referral stats right now. Try again in a moment.');
@@ -1521,6 +1537,18 @@
     });
   }
 
+  // The server no longer accepts this login (expired or reset): sign out and ask to log in again.
+  function signOutExpired(){
+    currentUser = null;
+    try { localStorage.removeItem(DISCORD_SESSION_KEY); } catch (e) { /* ignore */ }
+    try { localStorage.removeItem('fixcore_email_user'); } catch (e) { /* ignore */ }
+    closeAccount();
+    renderAuthNav();
+    renderDashboard();
+    renderCtas();
+    openModal();
+    showToast('Your login has expired. Please log in again.');
+  }
   function closeAccount(){ accountOverlay.classList.remove('open'); document.body.style.overflow = ''; }
   document.getElementById('accountClose').addEventListener('click', closeAccount);
   accountOverlay.addEventListener('click', function(e){ if (e.target === accountOverlay) closeAccount(); });

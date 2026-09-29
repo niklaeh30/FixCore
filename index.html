@@ -1391,6 +1391,7 @@
       .then(function(result){
         var d = result.data || {};
         if (!result.ok){
+          if (result.status === 401){ signOutExpired(); return; }
           showMsg(result.status === 401
             ? 'Your session expired — sign out and back in to see your referral stats.'
             : 'Could not load your referral stats right now. Try again in a moment.');
@@ -1551,6 +1552,18 @@
     });
   }
 
+  // The server no longer accepts this login (expired or reset): sign out and ask to log in again.
+  function signOutExpired(){
+    currentUser = null;
+    try { localStorage.removeItem(DISCORD_SESSION_KEY); } catch (e) { /* ignore */ }
+    try { localStorage.removeItem('fixcore_email_user'); } catch (e) { /* ignore */ }
+    closeAccount();
+    renderAuthNav();
+    renderDashboard();
+    renderCtas();
+    openModal();
+    showToast('Your login has expired. Please log in again.');
+  }
   function closeAccount(){ accountOverlay.classList.remove('open'); document.body.style.overflow = ''; }
   document.getElementById('accountClose').addEventListener('click', closeAccount);
   accountOverlay.addEventListener('click', function(e){ if (e.target === accountOverlay) closeAccount(); });
