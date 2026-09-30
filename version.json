@@ -1,6 +1,6 @@
    {
-    "version": "2.1.v2",
+    "version": "2.1.v3",
     "type": "update",
-    "changelog": "Faster Networking, smoother loading, in-app updates and a more reliable Discord sign-in. New Quick Boost button on Home: High Performance plan + RAM clean-up in one click.",
+    "changelog": "New sidebar with grouped sections and clean icons: System Restore now sits right under Home. Pages open instantly and the General Tweaks page no longer lags or flickers. Tweak count badge added to the menu.",
      "download_url": "https://fixcorepc.com/download.html"
    }
