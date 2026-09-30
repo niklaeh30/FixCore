@@ -21,7 +21,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/fixcore.css?v=13">
+<link rel="stylesheet" href="assets/fixcore.css?v=14">
 </head>
 <body class="page-callback" id="top">
 <svg class="svg-defs" aria-hidden="true" focusable="false"><defs><linearGradient id="fxIcon" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#2ad4ff"/><stop offset=".55" stop-color="#3f7dff"/><stop offset="1" stop-color="#a64dff"/></linearGradient></defs></svg>
@@ -594,10 +594,10 @@
           <div class="aff-panel" id="affUsePanel" hidden>
             <p>Turn your available balance into a one-time discount code. Pick what you want to buy:</p>
             <div class="aff-choice">
-              <button type="button" class="aff-option" data-product="fixcore"><b>FixCore 2.1</b><span>Up to $24.50 off</span></button>
-              <button type="button" class="aff-option" data-product="nettboost"><b>NettBoost</b><span>Up to $4.50 off</span></button>
+              <button type="button" class="aff-option" data-product="fixcore"><b>FixCore 2.1</b><span>Up to <span data-aff-max="fixcore">$10.00</span> off</span></button>
+              <button type="button" class="aff-option" data-product="nettboost"><b>NettBoost</b><span>Up to <span data-aff-max="nettboost">$3.00</span> off</span></button>
             </div>
-            <p class="aff-note">Only what the product costs is used, the rest stays in your balance. Stripe takes one code per order, so it can't be combined with another discount code.</p>
+            <p class="aff-note">Each code uses up to the limit shown, the rest stays in your balance. Stripe takes one code per order, so it can't be combined with another discount code.</p>
           </div>
           <div class="aff-panel" id="affPayoutPanel" hidden>
             <div class="aff-tabs" role="tablist" aria-label="Payout method">
@@ -1268,6 +1268,12 @@
     affWalletHint.textContent = d.hasPendingPayout ? 'Your payout request is being processed.'
       : (available < payoutMin ? 'Payouts unlock at ' + money(payoutMin) + ' available.' : '');
     affPayoutSubmit.textContent = 'Request ' + money(available) + ' payout';
+    if (d.creditMax){
+      [].forEach.call(document.querySelectorAll('[data-aff-max]'), function(el){
+        var v = d.creditMax[el.getAttribute('data-aff-max')];
+        if (typeof v === 'number') el.textContent = money(v);
+      });
+    }
     if (affUseBtn.disabled) affUsePanel.hidden = true;
     if (affPayoutBtn.disabled) affPayoutPanel.hidden = true;
     var rows = (d.history || []).map(function(h){
@@ -1636,6 +1642,6 @@
   } catch (e) { /* ignore */ }
 })();
 </script>
-<script src="assets/fixcore-shell.js?v=13"></script>
+<script src="assets/fixcore-shell.js?v=14"></script>
 </body>
 </html>
