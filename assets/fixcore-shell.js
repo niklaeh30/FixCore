@@ -3,6 +3,13 @@
 (function(){
   'use strict';
 
+  // Don't let other sites show this page inside an invisible frame (clickjacking).
+  if (window.top !== window.self){
+    try { window.top.location = window.location.href; }
+    catch (e) { document.documentElement.style.display = 'none'; }
+    return;
+  }
+
   var header = document.getElementById('siteHeader');
   function onScroll(){ if (header) header.classList.toggle('scrolled', window.scrollY > 8); }
   window.addEventListener('scroll', onScroll, { passive: true });

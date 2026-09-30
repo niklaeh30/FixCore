@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w5TH3WV+lFyIkUGscTRHWlsJFKiPjGHUHgYIfJJh4N0='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self' https://web-production-fae792.up.railway.app https://worker-production-8250.up.railway.app https://discord.com https://discordapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — FixCore</title>
 <meta name="robots" content="noindex, nofollow">
@@ -10,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/fixcore.css?v=16">
+<link rel="stylesheet" href="assets/fixcore.css?v=17">
 </head>
 <body class="page-admin">
 <div class="page-bg" aria-hidden="true"></div>
@@ -70,6 +72,7 @@
 <script>
 (function(){
   "use strict";
+  if (window.top !== window.self){ document.documentElement.style.display = 'none'; return; }
   var API_BASE = 'https://web-production-fae792.up.railway.app';
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function money(n){ return '$' + Number(n || 0).toFixed(2); }
