@@ -1,0 +1,7 @@
+# FixCore: search engines and AI assistants are welcome to read the public pages.
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /callback.html
+
+Sitemap: https://fixcorepc.com/sitemap.xml

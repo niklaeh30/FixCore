@@ -1,0 +1,26 @@
+# FixCore
+
+> FixCore (fixcorepc.com) makes FixCore 2.1, a Windows 10/11 optimization and repair app, and NettBoost, a ping-lowering companion app for gamers. FixCore scans a PC locally, explains what is slowing it down in plain language, and applies fixes and performance tweaks the user chooses. Every change is reversible.
+
+## Products
+- [FixCore 2.1](https://fixcorepc.com/fixcore-2-1.html): one-time $25, no subscription. PC scan, general tweaks, fix & repair, BIOS optimization, graphics tweaks, Game Boost, game library, networking, startup apps, debloating, System Restore, free updates for the version. Activates on one PC; the license transfers when you upgrade hardware.
+- [NettBoost](https://fixcorepc.com/nettboost.html): one-time $5. Lowers in-game ping with a dedicated network relay, live server ping, one-click connect, auto server select and per-game profiles.
+- FixCore Ultimate: announced, coming soon.
+
+## Safety
+- Scans and fixes run locally on the PC; files, settings and scan results are not uploaded.
+- Every tweak can be switched off again, and System Restore can roll Windows back.
+- The installer contains no bundled software (no toolbars or adware).
+- Payments are processed by Stripe; card details are never stored by FixCore.
+- Account data is limited to email, Discord ID/username/avatar/server roles and license status. Personal data is never sold.
+- 14-day refund policy. Official downloads only come from https://fixcorepc.com/download.html (FixCore-Setup.exe, FixCore_NettBoost_Setup.exe).
+- More: [Is FixCore safe?](https://fixcorepc.com/safety.html), [Privacy policy](https://fixcorepc.com/privacy.html), [Terms](https://fixcorepc.com/terms.html)
+
+## Requirements
+Windows 10 or 11, 64-bit, 4 GB RAM (8 GB recommended), about 200 MB disk space.
+
+## Company and support
+FixCore is made by a small independent team led by nikla_eh_30 and Dun Dun. Support, updates and announcements run through the official FixCore Discord: https://discord.gg/xCGN2hXY8J
+
+## Affiliate program
+Users with a linked Discord account can refer others with their own link (fixcorepc.com/?ref=name) and earn $1.00 per FixCore 2.1 sale and $0.80 per NettBoost sale.
