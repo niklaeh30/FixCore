@@ -808,6 +808,19 @@ span.avatar-lg{display:flex;align-items:center;justify-content:center;background
 .safety-note{font-size:14px;color:var(--text-3);margin-top:12px;}
 p .link-btn,li .link-btn{white-space:normal;}
 
+.forgot-row{text-align:center;margin-top:12px;font-size:13.5px;}
+.forgot-panel h2{font-size:22px;margin-bottom:8px;}
+.forgot-msg{font-size:13.5px;text-align:center;margin-top:12px;color:var(--text-2);}
+.forgot-msg:empty{display:none;}
+.forgot-msg.ok{color:var(--ok);}
+.forgot-msg.err{color:var(--danger);}
+.reset-card{padding:32px;border-radius:var(--r-lg);border:1px solid var(--line-2);background:linear-gradient(180deg,var(--panel-2),var(--panel));}
+.reset-done{text-align:center;}
+.reset-done .check{width:58px;height:58px;border-radius:50%;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;color:var(--ok);background:rgba(53,224,140,.1);border:1px solid rgba(53,224,140,.4);}
+.reset-done .check svg{width:26px;height:26px;}
+.reset-done h2{font-size:24px;margin-bottom:8px;}
+.reset-done p{color:var(--text-2);margin-bottom:22px;}
+
 /* ---------- toast ---------- */
 .toast{
   position:fixed;left:50%;bottom:26px;z-index:1100;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);

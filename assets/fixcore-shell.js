@@ -209,6 +209,53 @@
     if (!root.classList.contains('promo-ended')) promoTimer = setInterval(promoTick, 1000);
   }
 
+  // ---------- forgot password (inside the login modal) ----------
+  var forgotPanel = document.getElementById('forgotPanel');
+  var forgotLink = document.getElementById('forgotLink');
+  if (forgotPanel && forgotLink){
+    var authForms = document.getElementById('authForms');
+    var loginOverlay = document.getElementById('modalOverlay');
+    var forgotMsg = document.getElementById('forgotMsg');
+    var forgotEmail = document.getElementById('forgotEmail');
+    var forgotSubmit = document.getElementById('forgotSubmit');
+    var showForgot = function(on){
+      forgotPanel.hidden = !on;
+      if (authForms) authForms.style.display = on ? 'none' : '';
+      forgotMsg.textContent = ''; forgotMsg.className = 'forgot-msg';
+    };
+    forgotLink.addEventListener('click', function(e){
+      e.preventDefault();
+      var typed = document.getElementById('authEmail');
+      if (typed && typed.value) forgotEmail.value = typed.value;
+      showForgot(true);
+      setTimeout(function(){ forgotEmail.focus(); }, 30);
+    });
+    document.getElementById('forgotBack').addEventListener('click', function(e){ e.preventDefault(); showForgot(false); });
+    if (loginOverlay && window.MutationObserver){
+      new MutationObserver(function(){
+        if (!loginOverlay.classList.contains('open') && !forgotPanel.hidden) showForgot(false);
+      }).observe(loginOverlay, { attributes: true, attributeFilter: ['class'] });
+    }
+    var sendReset = function(){
+      var email = forgotEmail.value.trim();
+      forgotMsg.className = 'forgot-msg';
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ forgotMsg.className = 'forgot-msg err'; forgotMsg.textContent = 'Enter the email address of your account.'; return; }
+      forgotSubmit.disabled = true;
+      fetch(forgotPanel.getAttribute('data-api') + '/api/forgot-password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email })
+      }).then(function(res){ return res.json().catch(function(){ return {}; }).then(function(d){ return { ok: res.ok, d: d }; }); })
+        .then(function(r){
+          if (!r.ok){ forgotMsg.className = 'forgot-msg err'; forgotMsg.textContent = (r.d && r.d.error) || 'Something went wrong. Try again.'; return; }
+          forgotMsg.className = 'forgot-msg ok';
+          forgotMsg.textContent = 'If an account exists for ' + email + ', a reset link is on its way. Check your inbox and spam folder.';
+        })
+        .catch(function(){ forgotMsg.className = 'forgot-msg err'; forgotMsg.textContent = 'Could not reach the server. Try again in a moment.'; })
+        .then(function(){ forgotSubmit.disabled = false; });
+    };
+    forgotSubmit.addEventListener('click', sendReset);
+    forgotEmail.addEventListener('keydown', function(e){ if (e.key === 'Enter') sendReset(); });
+  }
+
   // ---------- footer year ----------
   var yearEl = document.querySelector('[data-year]');
   if (yearEl) yearEl.textContent = String(new Date().getFullYear());
