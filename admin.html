@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-w5TH3WV+lFyIkUGscTRHWlsJFKiPjGHUHgYIfJJh4N0='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self' https://web-production-fae792.up.railway.app https://worker-production-8250.up.railway.app https://discord.com https://discordapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-4jwS/jFSSTjg0Cn+VwCt4DqLTVGaSCLRP+4+tUSgFzM='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self' https://web-production-fae792.up.railway.app https://worker-production-8250.up.railway.app https://discord.com https://discordapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — FixCore</title>
@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/fixcore.css?v=20">
+<link rel="stylesheet" href="assets/fixcore.css?v=21">
 </head>
 <body class="page-admin">
 <div class="page-bg" aria-hidden="true"></div>
@@ -52,9 +52,13 @@
 
       <section class="admin-block">
         <h2>Accounts</h2>
-        <p>Search, then add or remove money on their affiliate balance. Added money can be used right away. They see the note in their history.</p>
+        <p>Find an account to see its details, add or remove money, send a password reset, reset its affiliate data, block it or delete it.</p>
         <div class="admin-bar">
           <div class="field"><label for="acctSearch">Search by email or Discord name</label><input type="text" id="acctSearch" autocomplete="off" spellcheck="false"></div>
+          <select id="acctFilter" aria-label="Show accounts">
+            <option value="all">All accounts</option><option value="linked">Discord linked</option>
+            <option value="unlinked">No Discord yet</option><option value="blocked">Blocked</option>
+          </select>
           <button class="btn btn-ghost" id="acctSearchBtn" type="button">Search</button>
         </div>
         <p class="admin-msg" id="acctMsg"></p>
@@ -125,7 +129,8 @@
       if (!r.ok) return;
       var o = r.d;
       var cards = [
-        [o.accounts, 'Accounts'], [o.discordLinked, 'With Discord linked'], [o.affiliates, 'Affiliates'],
+        [o.accounts, 'Accounts'], [o.newAccounts7d || 0, 'New accounts (7 days)'], [o.discordLinked, 'With Discord linked'],
+        [o.affiliates, 'Affiliates'], [o.blocked || 0, 'Blocked accounts', (o.blocked || 0) > 0],
         [o.sales, 'Affiliate sales'], [money(o.salesRevenue), 'Revenue from affiliate sales'], [money(o.commission), 'Commission earned'],
         [o.pendingPayouts + ' · ' + money(o.pendingPayoutAmount), 'Payouts waiting', o.pendingPayouts > 0],
         [money(o.paidOut), 'Paid out'], [money(o.creditsUsed), 'Turned into discount codes'], [money(o.owedAvailable), 'Available in all balances']
@@ -173,47 +178,115 @@
   });
   filter.addEventListener('change', loadPayouts);
 
-  // ---------- accounts: add / remove money ----------
+  // ---------- accounts ----------
   var acctList = document.getElementById('acctList');
   var acctMsg = document.getElementById('acctMsg');
   var acctSearch = document.getElementById('acctSearch');
+  var acctFilter = document.getElementById('acctFilter');
+  var acctCache = {};
+  function day(iso){ return (iso || '').slice(0, 10); }
   function loadAccounts(){
     acctMsg.textContent = 'Loading…'; acctList.innerHTML = '';
-    api('/api/admin/accounts?q=' + encodeURIComponent(acctSearch.value.trim())).then(function(r){
+    api('/api/admin/accounts?q=' + encodeURIComponent(acctSearch.value.trim()) + '&filter=' + encodeURIComponent(acctFilter.value)).then(function(r){
       if (!r.ok){ acctMsg.textContent = (r.d && r.d.error) || 'Could not load accounts.'; return; }
       var items = r.d.accounts || [];
-      acctMsg.textContent = items.length ? 'Showing ' + items.length + ' account' + (items.length === 1 ? '' : 's') + ' with Discord linked.' : 'No accounts with Discord linked match that.';
+      acctCache = {};
+      items.forEach(function(a){ acctCache[a.id] = a; });
+      acctMsg.textContent = items.length ? 'Showing ' + items.length + ' account' + (items.length === 1 ? '' : 's') + '.' : 'No accounts match that.';
       acctList.innerHTML = items.map(function(a){
         var name = esc(a.discord_username || a.username);
-        return '<div class="acct-card"><div class="acct-top"><b>' + name + '</b><span>' + esc(a.email) + '</span>' +
-          (a.code ? '<span>code: ' + esc(a.code) + '</span>' : '') + '</div>' +
+        var badges = (a.disabled ? '<span class="acct-badge bad">Blocked</span>' : '') +
+                     (a.discordLinked ? '' : '<span class="acct-badge">No Discord</span>');
+        var grantHtml = a.discordLinked
+          ? '<div class="acct-grant"><input type="number" min="0.01" step="0.01" placeholder="Amount $" aria-label="Amount in dollars">' +
+            '<input type="text" maxlength="200" placeholder="Note they will see (optional)" aria-label="Note">' +
+            '<button class="btn btn-primary" type="button" data-act="grant" data-sign="1" data-id="' + a.id + '">Add money</button>' +
+            '<button class="btn btn-ghost" type="button" data-act="grant" data-sign="-1" data-id="' + a.id + '">Remove</button></div>'
+          : '<p class="acct-note">Money can be added once Discord is linked.</p>';
+        return '<div class="acct-card" id="acct-' + a.id + '"><div class="acct-top"><b>' + name + '</b>' + badges + '<span>' + esc(a.email) + '</span>' +
+          (a.code ? '<span>code: ' + esc(a.code) + '</span>' : '') + '<span>joined ' + esc(day(a.created_at)) + '</span></div>' +
           '<div class="acct-stats"><span>Available <b>' + money(a.available) + '</b></span><span>Pending <b>' + money(a.pending) + '</b></span><span>Earned <b>' + money(a.earned) + '</b></span></div>' +
-          '<div class="acct-grant"><input type="number" min="0.01" step="0.01" placeholder="Amount $" aria-label="Amount in dollars">' +
-          '<input type="text" maxlength="200" placeholder="Note they will see (optional)" aria-label="Note">' +
-          '<button class="btn btn-primary" type="button" data-grant="' + a.id + '" data-sign="1" data-name="' + name + '">Add money</button>' +
-          '<button class="btn btn-ghost" type="button" data-grant="' + a.id + '" data-sign="-1" data-name="' + name + '">Remove</button></div></div>';
+          grantHtml +
+          '<div class="acct-actions">' +
+            '<button type="button" class="acct-act" data-act="details" data-id="' + a.id + '">Details</button>' +
+            '<button type="button" class="acct-act" data-act="reset-pw" data-id="' + a.id + '">Send password reset</button>' +
+            (a.discordLinked ? '<button type="button" class="acct-act" data-act="reset-aff" data-id="' + a.id + '">Reset affiliate data</button>' : '') +
+            '<button type="button" class="acct-act" data-act="block" data-id="' + a.id + '">' + (a.disabled ? 'Unblock' : 'Block') + '</button>' +
+            '<button type="button" class="acct-act danger" data-act="delete" data-id="' + a.id + '">Delete account</button>' +
+          '</div><div class="acct-details" hidden></div></div>';
       }).join('');
     }).catch(function(){ acctMsg.textContent = 'Could not reach the server.'; });
   }
+  function post(path, body){ return api(path, { method: 'POST', body: JSON.stringify(body || {}) }); }
+  function done(r, okText){
+    if (!r.ok){ window.alert((r.d && r.d.error) || 'That didn’t work.'); return false; }
+    if (okText) window.alert(okText);
+    loadAccounts(); loadOverview(); loadPayouts(); loadSales();
+    return true;
+  }
+  function showDetails(id, box){
+    if (!box.hidden){ box.hidden = true; return; }
+    box.hidden = false; box.innerHTML = '<p class="acct-note">Loading…</p>';
+    api('/api/admin/accounts/' + id).then(function(r){
+      if (!r.ok){ box.innerHTML = '<p class="acct-note">' + esc((r.d && r.d.error) || 'Could not load details.') + '</p>'; return; }
+      var d = r.d;
+      var owned = d.owned ? (d.owned.length ? d.owned.map(esc).join(', ') : 'Nothing') : esc(d.rolesError || (d.discordLinked ? 'Unknown' : 'No Discord linked'));
+      var rows = [['Discord', d.discordLinked ? esc(d.discordUsername || 'linked') : 'Not linked'], ['Owns', owned],
+                  ['Joined', esc(day(d.createdAt))], ['Referral clicks', d.clicks || 0], ['Referred sales', d.salesCount || 0]];
+      var hist = (d.history || []).map(function(h){
+        var what = h.kind === 'credit' ? 'Discount code ' + esc(h.code || '') : h.kind === 'payout' ? 'Payout (' + esc(h.method) + ')'
+                 : h.kind === 'grant' ? 'Added by admin' + (h.note ? ': ' + esc(h.note) : '') : 'Removed by admin' + (h.note ? ': ' + esc(h.note) : '');
+        return '<tr><td>' + esc(day(h.createdAt)) + '</td><td>' + what + '</td><td>' + money(h.amount) + '</td><td>' + esc(h.status) + '</td></tr>';
+      }).join('');
+      var sales = (d.sales || []).map(function(x){ return '<tr><td>' + esc(day(x.createdAt)) + '</td><td>Referred sale</td><td>' + money(x.amount) + '</td><td>+' + money(x.commission) + '</td></tr>'; }).join('');
+      box.innerHTML = '<dl class="payout-details">' + rows.map(function(rw){ return '<dt>' + rw[0] + '</dt><dd>' + rw[1] + '</dd>'; }).join('') + '</dl>' +
+        ((hist || sales) ? '<div class="table-wrap"><table class="admin-table"><thead><tr><th>Date</th><th>What</th><th>Amount</th><th>Status</th></tr></thead><tbody>' + hist + sales + '</tbody></table></div>'
+                         : '<p class="acct-note">No affiliate activity yet.</p>');
+    }).catch(function(){ box.innerHTML = '<p class="acct-note">Could not reach the server.</p>'; });
+  }
   acctList.addEventListener('click', function(e){
-    var btn = e.target.closest('button[data-grant]');
+    var btn = e.target.closest('button[data-act]');
     if (!btn) return;
-    var box = btn.parentNode;
-    var amount = parseFloat(box.querySelector('input[type=number]').value);
-    var note = box.querySelector('input[type=text]').value.trim();
-    var sign = Number(btn.getAttribute('data-sign'));
-    if (!(amount > 0)){ window.alert('Enter an amount, like 5 or 2.50.'); return; }
-    var question = (sign > 0 ? 'Add ' + money(amount) + ' to ' : 'Remove ' + money(amount) + ' from ') + btn.getAttribute('data-name') + '?';
-    if (!window.confirm(question)) return;
-    btn.disabled = true;
-    api('/api/admin/accounts/' + btn.getAttribute('data-grant') + '/grant', { method: 'POST', body: JSON.stringify({ amount: sign * amount, note: note }) })
-      .then(function(r){
-        if (!r.ok){ window.alert((r.d && r.d.error) || 'Could not change the balance.'); btn.disabled = false; return; }
-        loadAccounts(); loadOverview();
-      })
-      .catch(function(){ window.alert('Could not reach the server.'); btn.disabled = false; });
+    var id = btn.getAttribute('data-id'), act = btn.getAttribute('data-act'), a = acctCache[id] || {};
+    var label = (a.discord_username || a.username || a.email || 'this account');
+    if (act === 'details'){ showDetails(id, document.querySelector('#acct-' + id + ' .acct-details')); return; }
+    if (act === 'grant'){
+      var box = btn.parentNode, sign = Number(btn.getAttribute('data-sign'));
+      var amount = parseFloat(box.querySelector('input[type=number]').value), note = box.querySelector('input[type=text]').value.trim();
+      if (!(amount > 0)){ window.alert('Enter an amount, like 5 or 2.50.'); return; }
+      if (!window.confirm((sign > 0 ? 'Add ' + money(amount) + ' to ' : 'Remove ' + money(amount) + ' from ') + label + '?')) return;
+      btn.disabled = true;
+      post('/api/admin/accounts/' + id + '/grant', { amount: sign * amount, note: note }).then(function(r){ if (!done(r)) btn.disabled = false; });
+      return;
+    }
+    if (act === 'reset-pw'){
+      if (!window.confirm('Email a password reset link to ' + a.email + '?')) return;
+      btn.disabled = true;
+      post('/api/admin/accounts/' + id + '/send-reset').then(function(r){ btn.disabled = false; done(r, 'Reset link sent to ' + a.email + '.'); });
+      return;
+    }
+    if (act === 'reset-aff'){
+      if (!window.confirm('Reset ALL affiliate data for ' + label + '?\n\nTheir balance, history and referred sales are wiped, and unused discount codes stop working. This can’t be undone.')) return;
+      btn.disabled = true;
+      post('/api/admin/accounts/' + id + '/reset-affiliate').then(function(r){ btn.disabled = false; done(r, r.ok ? 'Affiliate data reset.' + (r.d.codesDisabled ? ' ' + r.d.codesDisabled + ' discount code(s) turned off.' : '') : null); });
+      return;
+    }
+    if (act === 'block'){
+      var blocking = !a.disabled;
+      if (!window.confirm((blocking ? 'Block ' : 'Unblock ') + label + '?' + (blocking ? '\n\nThey are signed out and can’t log in until you unblock them.' : ''))) return;
+      btn.disabled = true;
+      post('/api/admin/accounts/' + id + '/block', { blocked: blocking }).then(function(r){ btn.disabled = false; done(r); });
+      return;
+    }
+    if (act === 'delete'){
+      var typed = window.prompt('This permanently deletes ' + label + ' and all its data.\n\nType the account’s email (' + a.email + ') to confirm:');
+      if (typed === null) return;
+      btn.disabled = true;
+      post('/api/admin/accounts/' + id + '/delete', { confirm: typed }).then(function(r){ btn.disabled = false; done(r, r.ok ? 'Account deleted.' : null); });
+    }
   });
   document.getElementById('acctSearchBtn').addEventListener('click', loadAccounts);
+  acctFilter.addEventListener('change', loadAccounts);
   acctSearch.addEventListener('keydown', function(e){ if (e.key === 'Enter') loadAccounts(); });
 
   // ---------- recent sales ----------
