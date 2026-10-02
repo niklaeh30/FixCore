@@ -33,7 +33,7 @@
       if (list.classList.contains('open') && !e.target.closest('.nav')) setMenu(false);
     });
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape') setMenu(false); });
-    window.addEventListener('resize', function(){ if (window.innerWidth > 1200) setMenu(false); });
+    window.addEventListener('resize', function(){ if (window.innerWidth > 1360) setMenu(false); });
   }
 
   // ---------- active nav link (page + scroll position) ----------

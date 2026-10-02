@@ -21,6 +21,7 @@ Windows 10 or 11, 64-bit, 4 GB RAM (8 GB recommended), about 200 MB disk space.
 
 ## Company and support
 FixCore is made by a small independent team led by nikla_eh_30 and Dun Dun. Support, updates and announcements run through the official FixCore Discord: https://discord.gg/xCGN2hXY8J
+TikTok: https://www.tiktok.com/@fixcore_official
 
 ## Affiliate program
 Users with a linked Discord account can refer others with their own link (fixcorepc.com/?ref=name) and earn $1.00 per FixCore 2.1 sale and $0.80 per NettBoost sale.

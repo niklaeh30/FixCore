@@ -149,7 +149,7 @@ code{font-family:var(--font-mono);}
 /* ---------- header ---------- */
 .site-header{position:sticky;top:0;z-index:100;padding:14px 20px 0;pointer-events:none;}
 .nav{
-  pointer-events:auto;position:relative;max-width:1320px;height:62px;margin:0 auto;
+  pointer-events:auto;position:relative;max-width:1440px;height:62px;margin:0 auto;
   display:flex;align-items:center;gap:10px;padding:0 10px 0 18px;
   background:rgba(9,11,26,.74);border:1px solid var(--line);border-radius:14px;
   -webkit-backdrop-filter:blur(16px) saturate(1.3);backdrop-filter:blur(16px) saturate(1.3);
@@ -230,6 +230,24 @@ code{font-family:var(--font-mono);}
   .nav-links a{height:46px;padding:0 14px;font-size:15.5px;}
   .nav-links a.is-active::after{left:14px;right:auto;width:26px;bottom:6px;}
   .nav-right{margin-left:auto;}
+}
+/* signed in: the name, Log out and Dashboard need room, so compact earlier */
+@media (max-width:1600px){
+  .user-chip{padding:0 5px;}
+  .user-chip span:not(.avatar){display:none;}
+}
+@media (max-width:1360px){
+  .nav:has(.user-chip) .hamburger{display:flex;}
+  .nav:has(.user-chip) .nav-links{
+    position:absolute;top:calc(100% + 8px);left:0;right:0;margin:0;flex-direction:column;align-items:stretch;gap:2px;padding:10px;
+    background:#0a0c1d;border:1px solid var(--line-2);border-radius:14px;box-shadow:0 30px 60px -20px rgba(0,0,0,.9);
+    opacity:0;visibility:hidden;transform:translateY(-6px);pointer-events:none;
+    transition:opacity .2s ease,transform .2s ease,visibility .2s;
+  }
+  .nav:has(.user-chip) .nav-links.open{opacity:1;visibility:visible;transform:none;pointer-events:auto;}
+  .nav:has(.user-chip) .nav-links a{height:46px;padding:0 14px;font-size:15.5px;}
+  .nav:has(.user-chip) .nav-links a.is-active::after{left:14px;right:auto;width:26px;bottom:6px;}
+  .nav:has(.user-chip) .nav-right{margin-left:auto;}
 }
 @media (max-width:640px){
   .site-header{padding:10px 10px 0;}
