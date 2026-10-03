@@ -349,7 +349,7 @@
         '<div class="ok">✓</div>' +
         '<h2>Download unlocked!</h2>' +
         '<p>Thanks for joining FixCore. Run the setup and you\'re good to go.</p>' +
-        '<a class="btn big" href="' + esc(data.download_url) + '" download>⬇ Download FixCore Free Tweaks</a>' +
+        '<button class="btn big" data-action="download">⬇ Download FixCore Free Tweaks</button>' +
         '<div class="hint">Your key: <code>' + esc(data.key) + '</code></div>';
     }
   }
@@ -403,6 +403,18 @@
         el.disabled = false; el.textContent = "I've redeemed it";
         showError('Not redeemed yet — paste the key in the redeem channel first.');
       }, handleError);
+    }
+    if (action === 'download') {
+      // Ask for a fresh download link every time (links only work for a few minutes)
+      el.disabled = true; el.textContent = 'Preparing download…';
+      keysApi('/api/free-tweaks').then(function (d) {
+        el.disabled = false; el.textContent = '⬇ Download FixCore Free Tweaks';
+        if (d.redeemed && d.download_url) window.location.href = d.download_url;
+        else applyStatus(d);
+      }, function (err) {
+        el.disabled = false; el.textContent = '⬇ Download FixCore Free Tweaks';
+        handleError(err);
+      });
     }
     if (action === 'copy') {
       var key = document.getElementById('keyText').textContent;
