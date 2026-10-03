@@ -1,6 +1,6 @@
    {
-    "version": "2.1.v4",
-    "type": "security update",
-    "changelog": "we have done a security update",
+    "version": "2.1.v5",
+    "type": "update",
+    "changelog": "An update is available. Tap to update.",
      "download_url": "https://fixcorepc.com/download.html"
    }
