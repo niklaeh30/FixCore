@@ -1,6 +1,6 @@
    {
-    "version": "2.1.v3",
-    "type": "update",
-    "changelog": "New sidebar with grouped sections and clean icons: System Restore now sits right under Home. Pages open instantly and the General Tweaks page no longer lags or flickers. Tweak count badge added to the menu.",
+    "version": "2.1.v4",
+    "type": "security update",
+    "changelog": "we have done a security update",
      "download_url": "https://fixcorepc.com/download.html"
    }
