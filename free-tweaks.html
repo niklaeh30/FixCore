@@ -205,10 +205,12 @@
       headers: { Authorization: 'Bearer ' + (s ? s.authToken : '') }
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (data) {
-        if (res.status === 401) { localStorage.removeItem(SESSION_KEY); throw { code: 'login' }; }
+        if (res.status === 401) throw { code: 'unauthorized' };
         if (res.status === 409) throw { code: 'link' };
         if (res.status === 503) throw { code: 'disabled' };
-        if (!res.ok) throw { code: 'server' };
+        if (res.status === 502) throw { code: 'check', detail: data.detail };
+        if (res.status === 404) throw { code: 'outdated' };
+        if (!res.ok) throw { code: 'server', detail: 'HTTP ' + res.status };
         return data;
       });
     }, function () { throw { code: 'network' }; });
@@ -244,13 +246,29 @@
       });
   }
 
+  // The key server said 401 - ask the login server directly before logging out,
+  // so a key-server problem never signs people out of the whole site.
+  function checkLoginThenReport() {
+    var s = getSession();
+    return fetch(ACCOUNTS_API + '/api/me', { headers: { Authorization: 'Bearer ' + (s ? s.authToken : '') } })
+      .then(function (res) {
+        if (res.status === 401) { localStorage.removeItem(SESSION_KEY); handleError({ code: 'login' }); return; }
+        panel.innerHTML = userBox() + '<button class="btn secondary" data-action="refresh">Try again</button>';
+        showError('You are logged in, but the key server could not confirm it. Please try again in a minute ' +
+                  'or ask in our Discord. (code: key-server-401)');
+      }, function () { handleError({ code: 'network' }); });
+  }
+
   function handleError(err) {
     var code = err && err.code;
+    if (code === 'unauthorized') { checkLoginThenReport(); return; }
+    if (code === 'check') { showError('The key server could not check your login (' + (err.detail || 'unknown') + '). Please try again soon.'); return; }
+    if (code === 'outdated') { showError('Free keys are being set up right now — check back soon! (code: key-server-404)'); return; }
     if (code === 'login') { render('login'); showError('Your session expired — please sign in again.'); return; }
     if (code === 'link') { render('link'); return; }
     if (code === 'disabled') { showError('Free keys are not available right now. Check back soon!'); return; }
     if (code === 'network') { showError("Couldn't reach the FixCore server. Please try again in a moment."); return; }
-    showError('Something went wrong. Please try again, or ask in our Discord.');
+    showError('Something went wrong. Please try again, or ask in our Discord.' + (err && err.detail ? ' (' + err.detail + ')' : ''));
   }
 
   // ---- UI ----------------------------------------------------------------

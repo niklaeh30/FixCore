@@ -267,7 +267,8 @@ def _find_discord_id(data: dict) -> str | None:
 def _account_user_from_token(token: str):
     """
     Ask the FixCore account backend who owns this website login token (JWT).
-    Returns (discord_id, name, email), _DISCORD_LINK_MISSING, or None (bad token).
+    Returns (discord_id, name, email), _DISCORD_LINK_MISSING,
+    ("error", reason) if the account API couldn't be asked, or None (bad token).
     """
     req = urllib.request.Request(
         f"{settings.accounts_api_base}/api/me",
@@ -277,11 +278,20 @@ def _account_user_from_token(token: str):
     try:
         with urllib.request.urlopen(req, timeout=8) as resp:
             data = json.load(resp)
-    except (urllib.error.URLError, ValueError, TimeoutError) as exc:
-        log.info("Account token check failed: %s", exc)
-        return None
+    except urllib.error.HTTPError as exc:
+        if exc.code in (401, 403):
+            log.info("Account token rejected by accounts API (%s)", exc.code)
+            return None
+        log.error("Accounts API /api/me returned HTTP %s", exc.code)
+        return "error", f"accounts API /api/me returned HTTP {exc.code}"
+    except (urllib.error.URLError, TimeoutError) as exc:
+        log.error("Could not reach accounts API: %s", exc)
+        return "error", f"could not reach accounts API ({exc})"
+    except ValueError:
+        log.error("Accounts API /api/me did not return JSON")
+        return "error", "accounts API /api/me did not return JSON"
     if not isinstance(data, dict):
-        return None
+        return "error", "accounts API /api/me returned an unexpected format"
     user = data.get("user") if isinstance(data.get("user"), dict) else data
     discord_id = _find_discord_id(data)
     if not discord_id:
@@ -318,6 +328,8 @@ def _identify_caller():
         result = _account_user_from_token(token)
         if result == _DISCORD_LINK_MISSING:
             return None, _DISCORD_LINK_MISSING
+        if isinstance(result, tuple) and result[0] == "error":
+            return None, "account_check_failed: " + result[1]
         if result:
             return result, None
         return None, "not_logged_in"
@@ -329,6 +341,9 @@ def _identify_caller():
 
 
 def _auth_error(code: str):
+    if code.startswith("account_check_failed"):
+        # Not the user's fault - the key server couldn't check the login
+        return jsonify(error="account_check_failed", detail=code.split(": ", 1)[-1]), 502
     status = 409 if code == _DISCORD_LINK_MISSING else 401
     return jsonify(error=code), status
 
@@ -403,7 +418,8 @@ def my_latest_redemption():
 
 @app.route("/health")
 def health():
-    return {"status": "ok"}, 200
+    # "version" lets you check in the browser that the newest code is deployed
+    return {"status": "ok", "version": "free-tweaks-3"}, 200
 
 
 _TEST_SHOP_PAGE = """
