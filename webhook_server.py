@@ -4,9 +4,8 @@ Flask server that:
      redemption key, and stores it against the Stripe session.
   2. Serves a small success page (the one Stripe redirects the customer to)
      that shows their redemption key so they can copy it into Discord.
-  3. Answers a small check-promo lookup the website's checkout pages call
-     while someone types a discount code, so they get a real "Applied"
-     state instead of the site just accepting anything typed in.
+  3. Hands out ONE free "FixCore Free Tweaks" key per logged-in Discord user
+     (/api/free-tweaks), and tells the website when the download is unlocked.
 
 Run standalone with:  python webhook_server.py
 Or import `app` and run it under gunicorn/waitress in production.
@@ -14,7 +13,12 @@ Or import `app` and run it under gunicorn/waitress in production.
 
 from __future__ import annotations
 
+import hmac
+import json
 import logging
+import sqlite3
+import urllib.error
+import urllib.request
 
 import stripe
 from flask import Flask, abort, jsonify, render_template_string, request
@@ -29,20 +33,6 @@ log = logging.getLogger("webhook_server")
 stripe.api_key = settings.stripe_secret_key
 
 app = Flask(__name__)
-
-# Only the website is allowed to call the JSON API below (the Stripe
-# webhook and success page don't need this — browsers don't enforce CORS
-# on server-to-server calls or plain page navigations).
-WEBSITE_ORIGIN = "https://fixcorepc.com"
-
-
-@app.after_request
-def _add_cors_headers(response):
-    if request.path.startswith("/api/"):
-        response.headers["Access-Control-Allow-Origin"] = WEBSITE_ORIGIN
-        response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
-        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-    return response
 
 
 def _unique_key() -> str:
@@ -113,42 +103,6 @@ def stripe_webhook():
     log.info("Generated key %s for session %s (%s)", key, session_id, customer_email)
 
     return "", 200
-
-
-@app.route("/api/check-promo", methods=["GET", "OPTIONS"])
-def check_promo():
-    """
-    Called from the website's checkout pages while someone types a
-    discount code. Looks the code up against Stripe directly (using the
-    secret key we already have here) so the site can show a real
-    "Applied" state instead of just accepting anything typed in.
-    """
-    if request.method == "OPTIONS":
-        return "", 204  # CORS preflight — headers added by _add_cors_headers
-
-    code = (request.args.get("code") or "").strip()
-    if not code:
-        return jsonify({"valid": False})
-
-    try:
-        result = stripe.PromotionCode.list(code=code, active=True, limit=1)
-    except stripe.StripeError as exc:
-        log.error("Stripe promo lookup failed for %r: %s", code, exc)
-        return jsonify({"valid": False})
-
-    if not result.data:
-        return jsonify({"valid": False})
-
-    # Newer stripe-python versions need an explicit .to_dict() before plain
-    # attribute/key access on nested fields works reliably.
-    promo = result.data[0].to_dict()
-    coupon = promo.get("coupon") or {}
-    return jsonify({
-        "valid": True,
-        "percent_off": coupon.get("percent_off"),
-        "amount_off": coupon.get("amount_off"),
-        "currency": coupon.get("currency"),
-    })
 
 
 _SUCCESS_PAGE = """
@@ -254,6 +208,197 @@ def success():
         attempt=attempt,
         discord_url=settings.discord_invite_url,
     )
+
+
+# --------------------------------------------------------------------------
+# Website API (called from fixcorepc.com)
+# --------------------------------------------------------------------------
+
+@app.after_request
+def _cors(response):
+    """Let fixcorepc.com call the /api/ endpoints from the browser."""
+    origin = request.headers.get("Origin", "")
+    if request.path.startswith("/api/") and origin in settings.allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Vary"] = "Origin"
+        response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, X-Api-Key"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+        response.headers["Access-Control-Max-Age"] = "600"
+    return response
+
+
+def _discord_user_from_token(access_token: str) -> tuple[str, str] | None:
+    """Ask Discord who owns this OAuth token. Returns (id, username) or None."""
+    req = urllib.request.Request(
+        "https://discord.com/api/v10/users/@me",
+        headers={
+            "Authorization": f"Bearer {access_token}",
+            # Discord's Cloudflare rejects the default Python user agent
+            "User-Agent": "FixCoreRedeemBot (https://fixcorepc.com, 1.0)",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.load(resp)
+        return str(data["id"]), str(data.get("username") or "")
+    except (urllib.error.URLError, KeyError, ValueError, TimeoutError) as exc:
+        log.info("Discord token check failed: %s", exc)
+        return None
+
+
+_DISCORD_LINK_MISSING = "discord_not_linked"
+
+
+def _find_discord_id(data: dict) -> str | None:
+    """Pull the linked Discord ID out of the account API's /api/me response."""
+    for d in (data, data.get("user")):
+        if not isinstance(d, dict):
+            continue
+        for k in ("discord_id", "discordId", "discord_user_id", "discordUserId"):
+            v = d.get(k)
+            if v and str(v).isdigit():
+                return str(v)
+        disc = d.get("discord")
+        if isinstance(disc, dict) and str(disc.get("id", "")).isdigit():
+            return str(disc["id"])
+    return None
+
+
+def _account_user_from_token(token: str):
+    """
+    Ask the FixCore account backend who owns this website login token (JWT).
+    Returns (discord_id, name, email), _DISCORD_LINK_MISSING, or None (bad token).
+    """
+    req = urllib.request.Request(
+        f"{settings.accounts_api_base}/api/me",
+        headers={"Authorization": f"Bearer {token}",
+                 "User-Agent": "FixCoreRedeemBot (https://fixcorepc.com, 1.0)"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.load(resp)
+    except (urllib.error.URLError, ValueError, TimeoutError) as exc:
+        log.info("Account token check failed: %s", exc)
+        return None
+    if not isinstance(data, dict):
+        return None
+    user = data.get("user") if isinstance(data.get("user"), dict) else data
+    discord_id = _find_discord_id(data)
+    if not discord_id:
+        return _DISCORD_LINK_MISSING
+    name = user.get("discord_username") or user.get("username")
+    return discord_id, name, user.get("email")
+
+
+def _identify_caller():
+    """
+    Works out which Discord user is asking. Ways in:
+      * Website:  Authorization: Bearer <FixCore account login token (JWT)>
+                  -> checked against fixcore-accounts /api/me, uses the linked Discord ID
+      * Discord:  Authorization: Bearer <Discord access token> -> checked against Discord
+      * Backend:  X-Api-Key: <FREE_KEY_API_SECRET> + discord_id (server-to-server)
+    Returns ((discord_id, name, email), None) or (None, error_code).
+    """
+    api_key = request.headers.get("X-Api-Key", "")
+    if api_key and settings.free_key_api_secret:
+        if not hmac.compare_digest(api_key, settings.free_key_api_secret):
+            return None, "not_logged_in"
+        data = request.get_json(silent=True) or {}
+        discord_id = str(data.get("discord_id") or request.args.get("discord_id") or "")
+        if not discord_id.isdigit():
+            return None, "not_logged_in"
+        return (discord_id, data.get("discord_name"), data.get("email")), None
+
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return None, "not_logged_in"
+    token = auth[7:].strip()
+
+    if token.count(".") == 2:  # JWT from the FixCore email login
+        result = _account_user_from_token(token)
+        if result == _DISCORD_LINK_MISSING:
+            return None, _DISCORD_LINK_MISSING
+        if result:
+            return result, None
+        return None, "not_logged_in"
+
+    user = _discord_user_from_token(token)
+    if user:
+        return (user[0], user[1], None), None
+    return None, "not_logged_in"
+
+
+def _auth_error(code: str):
+    status = 409 if code == _DISCORD_LINK_MISSING else 401
+    return jsonify(error=code), status
+
+
+def _free_tweaks_payload(record: database.KeyRecord | None) -> dict:
+    redeemed = bool(record and record.redeemed)
+    redeem_url = (
+        f"https://discord.com/channels/{settings.discord_guild_id}/{settings.redeem_channel_id}"
+        if settings.redeem_channel_id else settings.discord_invite_url
+    )
+    return {
+        "key": record.key if record else None,
+        "redeemed": redeemed,
+        # The download link is only handed out once the key has been redeemed
+        "download_url": settings.free_tweaks_download_url if redeemed else None,
+        "redeem_url": redeem_url,
+        "discord_invite_url": settings.discord_invite_url,
+    }
+
+
+@app.route("/api/free-tweaks", methods=["GET", "OPTIONS"])
+def free_tweaks_status():
+    """Does this user have a free key yet, and is it redeemed?"""
+    if request.method == "OPTIONS":
+        return "", 204
+    caller, err = _identify_caller()
+    if caller is None:
+        return _auth_error(err or "not_logged_in")
+    return jsonify(_free_tweaks_payload(database.get_free_key_for_user(caller[0])))
+
+
+@app.route("/api/free-tweaks/key", methods=["POST", "OPTIONS"])
+def free_tweaks_claim():
+    """Give the logged-in user their free key (or the one they already have)."""
+    if request.method == "OPTIONS":
+        return "", 204
+    if not settings.free_tweaks_role_id:
+        return jsonify(error="free_keys_disabled"), 503
+    caller, err = _identify_caller()
+    if caller is None:
+        return _auth_error(err or "not_logged_in")
+    discord_id, discord_name, email = caller
+
+    record = database.get_free_key_for_user(discord_id)
+    if record is None:
+        try:
+            record = database.create_key(
+                key=_unique_key(),
+                role_id=settings.free_tweaks_role_id,
+                customer_email=email,
+                price_id=database.FREE_TWEAKS_PRODUCT,
+                issued_to_id=discord_id,
+            )
+            log.info("Issued free key %s to %s (%s)", record.key, discord_id, discord_name)
+        except sqlite3.IntegrityError:
+            # Double click - the other request already created it
+            record = database.get_free_key_for_user(discord_id)
+    return jsonify(_free_tweaks_payload(record))
+
+
+@app.route("/api/redemptions/me", methods=["GET", "OPTIONS"])
+def my_latest_redemption():
+    """Latest key the logged-in user has redeemed (used by the account dashboard)."""
+    if request.method == "OPTIONS":
+        return "", 204
+    caller, err = _identify_caller()
+    if caller is None:
+        return _auth_error(err or "not_logged_in")
+    record = database.get_latest_key_for_user(caller[0])
+    return jsonify(key=record.key if record else None)
 
 
 @app.route("/health")
