@@ -88,7 +88,7 @@
         </div>
         <div class="dl-card-foot">
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Windows 10/11</span>
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>27.6 MB</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg><span data-size-of="FixCore-Setup.exe">51,9 MB</span></span>
         </div>
       </div>
       <div class="dl-card">
@@ -108,7 +108,7 @@
         </div>
         <div class="dl-card-foot">
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Windows 10/11</span>
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>15.4 MB</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg><span data-size-of="FixCore_NettBoost_Setup.exe">45,2 MB</span></span>
         </div>
       </div>
     </div>
@@ -589,5 +589,17 @@
 })();
 </script>
 <script src="assets/fixcore-shell.js?v=22"></script>
+<script>
+/* Viser alltid riktig filstørrelse: leser størrelsen rett fra installer-filen */
+(function(){
+  document.querySelectorAll('[data-size-of]').forEach(function(el){
+    fetch(el.getAttribute('data-size-of'), {method:'HEAD', cache:'no-store'})
+      .then(function(r){
+        var n = parseInt(r.headers.get('content-length') || '0', 10);
+        if (r.ok && n > 0) el.textContent = (n / 1e6).toFixed(1) + ' MB';
+      }).catch(function(){});
+  });
+})();
+</script>
 </body>
 </html>
