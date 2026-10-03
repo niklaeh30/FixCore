@@ -714,6 +714,8 @@
   var NETTBOOST_ROLE_ID = '1545452018313732116';
   // FixCore Ultimate is gated behind this single Discord role.
   var FIXCORE_ULTIMATE_ROLE_ID = '1549807754690957432';
+  // FixCore Free Tweaks: given by the redeem bot for a free key.
+  var FREE_TWEAKS_ROLE_ID = '1555947215938265209';
   function discordAuthorizeUrl(){
     var params = new URLSearchParams({
       client_id: DISCORD_CLIENT_ID,
@@ -742,7 +744,8 @@
       return {
         fixCore21: FIXCORE_2_1_ROLE_IDS.some(function(id){ return roles.indexOf(id) !== -1; }),
         nettBoost: roles.indexOf(NETTBOOST_ROLE_ID) !== -1,
-        fixCoreUltimate: roles.indexOf(FIXCORE_ULTIMATE_ROLE_ID) !== -1
+        fixCoreUltimate: roles.indexOf(FIXCORE_ULTIMATE_ROLE_ID) !== -1,
+        freeTweaks: roles.indexOf(FREE_TWEAKS_ROLE_ID) !== -1
       };
     });
   }
@@ -1534,10 +1537,25 @@
       var ownsFixCore = owned.fixCore21;
       var ownsNettBoost = owned.nettBoost;
       var ownsUltimate = owned.fixCoreUltimate;
+      var ownsFreeTweaks = !!owned.freeTweaks;
+
+      // FixCore Free Tweaks is always listed: "Owned" + Download, or a "Get free" link.
+      var freeRow =
+        '<div class="purchase-row">' +
+          '<div><div class="name">FixCore Free Tweaks</div><div class="sub">' +
+            (ownsFreeTweaks ? 'Verified via your Discord role' : 'Free — grab your key and download') +
+          '</div></div>' +
+          (ownsFreeTweaks
+            ? '<span style="display:flex;align-items:center;gap:12px;">' +
+                '<a class="link-btn" href="free-tweaks.html">Download</a>' +
+                '<span class="purchase-badge">Owned</span></span>'
+            : '<a class="link-btn" href="free-tweaks.html">Get free →</a>') +
+        '</div>';
 
       if (!ownsFixCore && !ownsNettBoost && !ownsUltimate){
         body.innerHTML =
-          '<p style="color:var(--sub-dim);">No purchases yet.</p>' +
+          freeRow +
+          '<p style="color:var(--sub-dim);margin-top:12px;">No paid purchases yet.</p>' +
           '<div class="row" style="margin-top:12px;"><a class="link-btn" href="fixcore-2-1.html">Browse products →</a></div>';
         return;
       }
@@ -1564,6 +1582,7 @@
             '<span class="purchase-badge">Owned</span>' +
           '</div>';
       }
+      rows += freeRow;
       body.innerHTML = rows;
 
       if (ownsFixCore){
