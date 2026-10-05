@@ -3,7 +3,7 @@
 > FixCore (fixcorepc.com) makes FixCore 2.1, a Windows 10/11 optimization and repair app, and NettBoost, a ping-lowering companion app for gamers. FixCore scans a PC locally, explains what is slowing it down in plain language, and applies fixes and performance tweaks the user chooses. Every change is reversible.
 
 ## Products
-- [FixCore 2.1](https://fixcorepc.com/fixcore-2-1.html): one-time $25, no subscription. PC scan, general tweaks, fix & repair, BIOS optimization, graphics tweaks, Game Boost, game library, networking, startup apps, debloating, System Restore, free updates for the version. Activates on one PC; the license transfers when you upgrade hardware.
+- [FixCore 2.1](https://fixcorepc.com/fixcore-2-1.html): one-time $15, no subscription. PC scan, general tweaks, fix & repair, BIOS optimization, graphics tweaks, Game Boost, game library, networking, startup apps, debloating, System Restore, free updates for the version. Activates on one PC; the license transfers when you upgrade hardware.
 - [NettBoost](https://fixcorepc.com/nettboost.html): one-time $5. Lowers in-game ping with a dedicated network relay, live server ping, one-click connect, auto server select and per-game profiles.
 - FixCore Ultimate: out now in beta, $25 one-time (https://fixcorepc.com/fixcore-ultimate.html). The next FixCore, rebuilt from the ground up: BIOS & Firmware page with XMP guide, shareable benchmark, one-click undo, automatic updates. Requires the FixCore Ultimate Discord role (given on key redemption).
 
