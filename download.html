@@ -29,7 +29,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/fixcore.css?v=22">
+<link rel="stylesheet" href="assets/fixcore.css?v=23">
 </head>
 <body class="page-download" id="top">
 <svg class="svg-defs" aria-hidden="true" focusable="false"><defs><linearGradient id="fxIcon" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="22" y2="22"><stop offset="0" stop-color="#2ad4ff"/><stop offset=".55" stop-color="#3f7dff"/><stop offset="1" stop-color="#a64dff"/></linearGradient></defs></svg>
@@ -117,9 +117,18 @@
       </div>
       <div class="dl-card dl-card-beta" id="ultimate">
         <div class="dl-card-top"><img src="assets/fixcore-logo.svg" alt="" width="46" height="38"><h3>FixCore <span class="dl-accent-blue">Ultimate</span></h3><span class="dl-beta-tag">Beta</span></div>
-        <p>The next FixCore, rebuilt from the ground up. Install it, then sign in with Discord inside the app — it unlocks for accounts with the FixCore Ultimate role and updates itself automatically.</p>
-        <div>
-          <a href="FixCore-Ultimate-Setup.exe" download="FixCore-Ultimate-Setup.exe" class="btn btn-primary btn-lg dl-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>Download beta</a>
+        <p>The next FixCore, rebuilt from the ground up. Only for accounts with the FixCore Ultimate role. Log in, and the beta installer unlocks once your role is verified. The app updates itself automatically.</p>
+        <div id="ultimateState">
+          <button type="button" class="btn btn-primary btn-lg dl-btn" id="ultimateSigninBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Log in to download</button>
+          <p class="dl-status" id="ultimateChecking" style="display:none;">Checking your Ultimate role…</p>
+          <div id="ultimateDenied" style="display:none;">
+            <p class="dl-denied-text">Your account doesn’t have the FixCore Ultimate role yet.</p>
+            <div class="dl-denied-row">
+              <a href="https://discord.gg/xCGN2hXY8J" target="_blank" rel="noopener" class="btn btn-ghost">Join Discord</a>
+              <button type="button" class="btn btn-ghost" id="ultimateRetryBtn">Try again</button>
+            </div>
+          </div>
+          <a href="FixCore-Ultimate-Setup.exe" download="FixCore-Ultimate-Setup.exe" class="btn btn-primary btn-lg dl-btn" id="ultimateDownloadBtn" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>Download beta</a>
         </div>
         <div class="dl-card-foot">
           <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Windows 10/11</span>
@@ -555,7 +564,24 @@
   // Unlocks each installer when the signed-in FixCore account owns the product
   // (the server checks the Discord roles linked to the account).
   var API_BASE = 'https://web-production-fae792.up.railway.app';
-  var PRODUCTS = { fixcore: { flag: 'fixCore21', name: 'FixCore 2.1' }, nettboost: { flag: 'nettBoost', name: 'NettBoost' } };
+  var PRODUCTS = { fixcore: { flag: 'fixCore21', name: 'FixCore 2.1' }, nettboost: { flag: 'nettBoost', name: 'NettBoost' }, ultimate: { flag: 'fixCoreUltimate', name: 'FixCore Ultimate' } };
+  // FixCore Ultimate beta: only accounts with this Discord role may download.
+  var ULTIMATE_ROLE_ID = '1549807754690957432';
+  var GUILD_ID = '1538214452191826122';
+  function discordToken(){
+    try { var d = JSON.parse(localStorage.getItem('fixcore_discord_user') || 'null'); return d && d.accessToken; } catch (e) { return null; }
+  }
+  // Used when the server answer doesn't say anything about Ultimate:
+  // ask Discord directly for this person's roles in the FixCore server.
+  function checkUltimateViaDiscord(){
+    var token = discordToken();
+    if (!token){ show('ultimate', 'denied', 'Sign in with Discord to verify your FixCore Ultimate role.'); return; }
+    show('ultimate', 'checking');
+    fetch('https://discord.com/api/v10/users/@me/guilds/' + GUILD_ID + '/member', { headers: { Authorization: 'Bearer ' + token } })
+      .then(function(res){ if (!res.ok) throw new Error(String(res.status)); return res.json(); })
+      .then(function(m){ show('ultimate', (m.roles || []).indexOf(ULTIMATE_ROLE_ID) !== -1 ? 'download' : 'denied'); })
+      .catch(function(){ show('ultimate', 'denied', 'Couldn\u2019t verify your Discord role. Log out and sign in with Discord again.'); });
+  }
   function $(id){ return document.getElementById(id); }
   function session(){ try { return JSON.parse(localStorage.getItem('fixcore_email_user') || 'null'); } catch (e) { return null; } }
   function show(key, state, text){
@@ -571,7 +597,11 @@
   var busy = false;
   function check(){
     var s = session();
-    if (!s || !s.authToken){ all('signin'); return; }
+    if (!s || !s.authToken){
+      all('signin');
+      if (discordToken()) checkUltimateViaDiscord();
+      return;
+    }
     if (busy) return;
     busy = true;
     all('checking');
@@ -580,7 +610,10 @@
       .then(function(r){
         if (r.status === 401){ all('signin'); return; }
         if (!r.ok){ all('denied', (r.d && r.d.error) || 'Couldn\u2019t check your license right now. Try again.'); return; }
-        Object.keys(PRODUCTS).forEach(function(k){ show(k, r.d[PRODUCTS[k].flag] ? 'download' : 'denied'); });
+        Object.keys(PRODUCTS).forEach(function(k){
+          if (k === 'ultimate' && typeof r.d[PRODUCTS[k].flag] === 'undefined'){ checkUltimateViaDiscord(); return; }
+          show(k, r.d[PRODUCTS[k].flag] ? 'download' : 'denied');
+        });
       })
       .catch(function(){ all('denied', 'Couldn\u2019t reach the server. Try again in a moment.'); })
       .then(function(){ busy = false; });
