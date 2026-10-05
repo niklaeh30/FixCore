@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-+94ZD9GLDngssxlo7Octzxsce6UKiN4XcjlsjBi/CuE=' 'sha256-UgBsmSJ3sj2iYAC6m/6LaHejY1MG4U70mtYmYf4UR2Y=' 'sha256-XgKP9i1vDKUwpZJd7dRiMlOW6+A197RM5PZvs7VCVoc='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self' https://web-production-fae792.up.railway.app https://worker-production-8250.up.railway.app https://discord.com https://discordapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-UgBsmSJ3sj2iYAC6m/6LaHejY1MG4U70mtYmYf4UR2Y=' 'sha256-WMjRDYmsKFQG68ncbNgNcBRW/AQmnPCTkLMdwafsr/E=' 'sha256-zZ8saU5JHTuIUA7VfN6g95EXMp5p0BAS9zhO/L5rs94=' 'sha256-zk3BQZbYQGp/K/jCeP3NRaE6SX3dSgcTvx6MUr3Ic/Y='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self' https://web-production-fae792.up.railway.app https://worker-production-8250.up.railway.app https://discord.com https://discordapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Download — FixCore</title>
@@ -136,7 +136,6 @@
         </div>
       </div>
     </div>
-    <p id="dlDebug" style="text-align:center;font-size:12px;color:var(--text-3);margin:14px auto 0;max-width:900px;word-break:break-word;"></p>
     <div class="dl-chips">
       <div class="dl-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Windows 10/11 required</div>
       <div class="dl-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/></svg>Safe and fully reversible</div>
@@ -620,13 +619,10 @@
       });
   }
 
-  function dbg(t){ var el = $('dlDebug'); if (el) el.textContent = 'Status: ' + t; }
   var busy = false;
   function check(){
     if (busy) return;
     var s = emailSession(), tok = discordToken();
-    dbg('email login ' + (s ? 'yes' : 'no') + ', Discord login ' + (tok ? 'yes' : 'no') +
-        ', saved user ' + (signedInAtAll() ? 'yes' : 'no'));
     if (!s && !tok){
       if (signedInAtAll()){
         each(function(k){ show(k, 'denied', 'Log out and log in again to verify your purchases.'); });
@@ -639,15 +635,12 @@
     each(function(k){ show(k, 'checking'); });
     var server = s ? viaServer(s).catch(function(e){ return { _error: e }; }) : Promise.resolve(null);
     server.then(function(sd){
-      dbg('email login ' + (s ? 'yes' : 'no') + ', Discord login ' + (tok ? 'yes' : 'no') + ', server: ' +
-          (!sd ? 'not asked' : sd._error ? ('error ' + (sd._error.expired ? '401 expired' : (sd._error.message || '?'))) : JSON.stringify(sd)));
       var missing = Object.keys(PRODUCTS).filter(function(k){
         return !sd || sd._error || typeof sd[PRODUCTS[k].flag] === 'undefined';
       });
       var discord = (missing.length && tok) ? viaDiscord(tok).catch(function(e){ return { _error: e }; })
                                             : Promise.resolve(null);
       return discord.then(function(dd){
-        if (dd){ var el = $('dlDebug'); if (el) el.textContent += ' | discord: ' + (dd._error ? ('error ' + (dd._error.expired ? '401/403' : (dd._error.message || '?'))) : JSON.stringify(dd)); }
         each(function(k){
           var flag = PRODUCTS[k].flag;
           if (sd && !sd._error && typeof sd[flag] !== 'undefined'){ show(k, sd[flag] ? 'download' : 'denied'); return; }
