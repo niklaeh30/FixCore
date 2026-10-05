@@ -289,7 +289,7 @@
       client_id: DISCORD_CLIENT_ID,
       redirect_uri: DISCORD_REDIRECT_URI,
       response_type: 'token',
-      scope: 'identify'
+      scope: 'identify guilds.members.read'
     });
     return 'https://discord.com/api/oauth2/authorize?' + params.toString();
   }
@@ -561,64 +561,103 @@
 <script>
 (function(){
   "use strict";
-  // Unlocks each installer when the signed-in FixCore account owns the product
-  // (the server checks the Discord roles linked to the account).
+  // Unlocks each installer when the signed-in account owns the product.
+  // Works for both kinds of login:
+  //   - FixCore account (email): asks the FixCore server
+  //   - Discord login: asks Discord for your roles in the FixCore server
+  // If one route can't answer for a product, the other one is tried.
   var API_BASE = 'https://web-production-fae792.up.railway.app';
-  var PRODUCTS = { fixcore: { flag: 'fixCore21', name: 'FixCore 2.1' }, nettboost: { flag: 'nettBoost', name: 'NettBoost' }, ultimate: { flag: 'fixCoreUltimate', name: 'FixCore Ultimate' } };
-  // FixCore Ultimate beta: only accounts with this Discord role may download.
-  var ULTIMATE_ROLE_ID = '1549807754690957432';
   var GUILD_ID = '1538214452191826122';
-  function discordToken(){
-    try { var d = JSON.parse(localStorage.getItem('fixcore_discord_user') || 'null'); return d && d.accessToken; } catch (e) { return null; }
-  }
-  // Used when the server answer doesn't say anything about Ultimate:
-  // ask Discord directly for this person's roles in the FixCore server.
-  function checkUltimateViaDiscord(){
-    var token = discordToken();
-    if (!token){ show('ultimate', 'denied', 'Sign in with Discord to verify your FixCore Ultimate role.'); return; }
-    show('ultimate', 'checking');
-    fetch('https://discord.com/api/v10/users/@me/guilds/' + GUILD_ID + '/member', { headers: { Authorization: 'Bearer ' + token } })
-      .then(function(res){ if (!res.ok) throw new Error(String(res.status)); return res.json(); })
-      .then(function(m){ show('ultimate', (m.roles || []).indexOf(ULTIMATE_ROLE_ID) !== -1 ? 'download' : 'denied'); })
-      .catch(function(){ show('ultimate', 'denied', 'Couldn\u2019t verify your Discord role. Log out and sign in with Discord again.'); });
-  }
+  var PRODUCTS = {
+    fixcore:   { flag: 'fixCore21',       name: 'FixCore 2.1',      roles: ['1540798693123559474', '1538255411298304010'] },
+    nettboost: { flag: 'nettBoost',       name: 'NettBoost',        roles: ['1545452018313732116'] },
+    ultimate:  { flag: 'fixCoreUltimate', name: 'FixCore Ultimate', roles: ['1549807754690957432'] }
+  };
+  var DENIED_TEXT = { ultimate: 'Your account doesn\u2019t have the FixCore Ultimate role yet.' };
   function $(id){ return document.getElementById(id); }
-  function session(){ try { return JSON.parse(localStorage.getItem('fixcore_email_user') || 'null'); } catch (e) { return null; } }
+  function read(key){ try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { return null; } }
+  function emailSession(){ var s = read('fixcore_email_user'); return s && s.authToken ? s : null; }
+  function discordToken(){ var d = read('fixcore_discord_user'); return d && d.accessToken ? d.accessToken : null; }
+  function signedInAtAll(){ return !!(read('fixcore_email_user') || read('fixcore_discord_user')); }
+
   function show(key, state, text){
     $(key + 'SigninBtn').style.display = state === 'signin' ? '' : 'none';
     $(key + 'Checking').style.display = state === 'checking' ? '' : 'none';
     $(key + 'Denied').style.display = state === 'denied' ? '' : 'none';
     $(key + 'DownloadBtn').style.display = state === 'download' ? '' : 'none';
     if (state === 'denied'){
-      $(key + 'Denied').querySelector('.dl-denied-text').textContent = text || ('Your account doesn\u2019t own ' + PRODUCTS[key].name + ' yet.');
+      $(key + 'Denied').querySelector('.dl-denied-text').textContent =
+        text || DENIED_TEXT[key] || ('Your account doesn\u2019t own ' + PRODUCTS[key].name + ' yet.');
     }
   }
-  function all(state, text){ Object.keys(PRODUCTS).forEach(function(k){ show(k, state, text); }); }
+  function each(fn){ Object.keys(PRODUCTS).forEach(fn); }
+
+  function viaServer(s){
+    return fetch(API_BASE + '/api/me/products', { headers: { 'Authorization': 'Bearer ' + s.authToken } })
+      .then(function(res){
+        return res.json().catch(function(){ return {}; }).then(function(d){
+          if (res.status === 401) throw { expired: true };
+          if (!res.ok) throw new Error((d && d.error) || 'server');
+          return d;
+        });
+      });
+  }
+  function viaDiscord(token){
+    return fetch('https://discord.com/api/v10/users/@me/guilds/' + GUILD_ID + '/member',
+                 { headers: { Authorization: 'Bearer ' + token } })
+      .then(function(res){
+        if (res.status === 401 || res.status === 403) throw { expired: true };
+        if (res.status === 404) return { notInServer: true };
+        if (!res.ok) throw new Error('discord');
+        return res.json();
+      })
+      .then(function(m){
+        if (m.notInServer) return { _notInServer: true };
+        var roles = m.roles || [], out = {};
+        each(function(k){ out[PRODUCTS[k].flag] = PRODUCTS[k].roles.some(function(r){ return roles.indexOf(r) !== -1; }); });
+        return out;
+      });
+  }
+
   var busy = false;
   function check(){
-    var s = session();
-    if (!s || !s.authToken){
-      all('signin');
-      if (discordToken()) checkUltimateViaDiscord();
+    if (busy) return;
+    var s = emailSession(), tok = discordToken();
+    if (!s && !tok){
+      if (signedInAtAll()){
+        each(function(k){ show(k, 'denied', 'Log out and log in again to verify your purchases.'); });
+      } else {
+        each(function(k){ show(k, 'signin'); });
+      }
       return;
     }
-    if (busy) return;
     busy = true;
-    all('checking');
-    fetch(API_BASE + '/api/me/products', { headers: { 'Authorization': 'Bearer ' + s.authToken } })
-      .then(function(res){ return res.json().catch(function(){ return {}; }).then(function(d){ return { ok: res.ok, status: res.status, d: d }; }); })
-      .then(function(r){
-        if (r.status === 401){ all('signin'); return; }
-        if (!r.ok){ all('denied', (r.d && r.d.error) || 'Couldn\u2019t check your license right now. Try again.'); return; }
-        Object.keys(PRODUCTS).forEach(function(k){
-          if (k === 'ultimate' && typeof r.d[PRODUCTS[k].flag] === 'undefined'){ checkUltimateViaDiscord(); return; }
-          show(k, r.d[PRODUCTS[k].flag] ? 'download' : 'denied');
+    each(function(k){ show(k, 'checking'); });
+    var server = s ? viaServer(s).catch(function(e){ return { _error: e }; }) : Promise.resolve(null);
+    server.then(function(sd){
+      var missing = Object.keys(PRODUCTS).filter(function(k){
+        return !sd || sd._error || typeof sd[PRODUCTS[k].flag] === 'undefined';
+      });
+      var discord = (missing.length && tok) ? viaDiscord(tok).catch(function(e){ return { _error: e }; })
+                                            : Promise.resolve(null);
+      return discord.then(function(dd){
+        each(function(k){
+          var flag = PRODUCTS[k].flag;
+          if (sd && !sd._error && typeof sd[flag] !== 'undefined'){ show(k, sd[flag] ? 'download' : 'denied'); return; }
+          if (dd && dd._notInServer){ show(k, 'denied', 'Join the FixCore Discord server first, then try again.'); return; }
+          if (dd && !dd._error){ show(k, dd[flag] ? 'download' : 'denied'); return; }
+          var err = (sd && sd._error) || (dd && dd._error) || {};
+          if (err.expired){ show(k, 'denied', 'Your login has expired. Log out and log in again.'); return; }
+          if (!tok && k === 'ultimate'){ show(k, 'denied', 'Log in with Discord to verify your FixCore Ultimate role.'); return; }
+          show(k, 'denied', 'Couldn\u2019t check your license right now. Try again.');
         });
-      })
-      .catch(function(){ all('denied', 'Couldn\u2019t reach the server. Try again in a moment.'); })
-      .then(function(){ busy = false; });
+      });
+    }).catch(function(){
+      each(function(k){ show(k, 'denied', 'Couldn\u2019t reach the server. Try again in a moment.'); });
+    }).then(function(){ busy = false; });
   }
-  Object.keys(PRODUCTS).forEach(function(k){
+
+  each(function(k){
     $(k + 'SigninBtn').addEventListener('click', function(){
       var login = document.getElementById('openLogin');
       if (login) login.click();
@@ -628,9 +667,10 @@
   // Re-check when someone logs in or out (the header re-renders then).
   var nav = document.getElementById('navActions');
   if (nav && window.MutationObserver){
-    var last = (session() || {}).authToken || '';
+    var key = function(){ return JSON.stringify([(emailSession() || {}).authToken || '', discordToken() || '']); };
+    var last = key();
     new MutationObserver(function(){
-      var now = (session() || {}).authToken || '';
+      var now = key();
       if (now !== last){ last = now; check(); }
     }).observe(nav, { childList: true, subtree: true });
   }
