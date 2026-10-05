@@ -1072,3 +1072,5 @@ p .link-btn,li .link-btn{white-space:normal;}
 .dl-soon-link{color:var(--text-2);text-decoration:underline;text-underline-offset:3px;}
 .dl-soon-link:hover{color:var(--text);}
 .footer-soon{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:700;letter-spacing:.03em;background:var(--panel-3);color:var(--text-2);vertical-align:1px;}
+.dl-card-beta .dl-card-top{flex-wrap:wrap;}
+.dl-beta-tag{margin-left:auto;font-family:var(--font-display);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:4px 12px;border-radius:999px;color:#fff;background:var(--grad);box-shadow:0 0 18px -4px rgba(120,80,255,.7);}
