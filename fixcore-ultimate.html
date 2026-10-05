@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-3A7/y4smUCgCJXeg+0Gdi9FNOKSFpL6AtWY7vdn8YIM='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self' https://web-production-fae792.up.railway.app https://worker-production-8250.up.railway.app https://discord.com https://discordapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-h9vjGCIYyXQTvRZooNu/nuX/wE2K3bPOrJR8AKRhPSc='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self' https://web-production-fae792.up.railway.app https://worker-production-8250.up.railway.app https://discord.com https://discordapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FixCore Ultimate — FixCore</title>
@@ -115,7 +115,8 @@
           <span class="label">Total</span>
           <span class="amount" id="orderTotal">$25</span>
         </div>
-        <button class="btn btn-primary" id="buyBtn" type="button">Proceed to payment</button>
+        <!-- Paste the Stripe Payment Link for FixCore Ultimate between the quotes below. -->
+        <button class="btn btn-primary" id="buyBtn" type="button" data-stripe-url="https://buy.stripe.com/5kQ5kE0fng6a74v9z63VC04">Proceed to payment</button>
         <div class="trust-strip">
           <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>Instant access</div>
           <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Secure payment</div>
@@ -147,7 +148,7 @@
         <a href="index.html#how-it-works">How it works</a>
         <a href="products.html">Products</a>
         <a href="download.html">Download</a>
-        <a href="products.html#ultimate">FixCore Ultimate <span class="footer-soon">Coming soon</span></a>
+        <a href="fixcore-ultimate.html">FixCore Ultimate <span class="footer-soon">Beta</span></a>
       </div>
       <div class="footer-col">
         <h4>Company</h4>
@@ -632,9 +633,9 @@
   // never trusts a code just because something was typed in.
   var PROMO_CHECK_BASE = API_BASE; // the accounts server checks the code against Stripe
   var BASE_PRICE_CENTS = 2500;
-  // Paste the Stripe Payment Link for FixCore Ultimate here. While it's empty
-  // the button says "Checkout opens soon" and nobody can pay yet.
-  var ULTIMATE_STRIPE_URL = '';
+  // The Stripe Payment Link lives on the button (data-stripe-url) so it can be
+  // changed without touching this script. Empty = "Checkout opens soon".
+  var ULTIMATE_STRIPE_URL = (document.getElementById('buyBtn').getAttribute('data-stripe-url') || '').trim();
   var discountCodeInput = document.getElementById('discountCodeInput');
   var discountStatus = document.getElementById('discountStatus');
   var discountAppliedPill = document.getElementById('discountAppliedPill');

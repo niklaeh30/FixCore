@@ -5,7 +5,7 @@
 ## Products
 - [FixCore 2.1](https://fixcorepc.com/fixcore-2-1.html): one-time $25, no subscription. PC scan, general tweaks, fix & repair, BIOS optimization, graphics tweaks, Game Boost, game library, networking, startup apps, debloating, System Restore, free updates for the version. Activates on one PC; the license transfers when you upgrade hardware.
 - [NettBoost](https://fixcorepc.com/nettboost.html): one-time $5. Lowers in-game ping with a dedicated network relay, live server ping, one-click connect, auto server select and per-game profiles.
-- FixCore Ultimate: in beta, coming soon. The next FixCore, rebuilt from the ground up (BIOS & Firmware page with XMP guide, shareable benchmark, one-click undo, automatic updates). Price and release date will be announced on Discord.
+- FixCore Ultimate: out now in beta, $25 one-time (https://fixcorepc.com/fixcore-ultimate.html). The next FixCore, rebuilt from the ground up: BIOS & Firmware page with XMP guide, shareable benchmark, one-click undo, automatic updates.
 
 ## Safety
 - Scans and fixes run locally on the PC; files, settings and scan results are not uploaded.
