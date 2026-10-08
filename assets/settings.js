@@ -139,6 +139,19 @@
     $('discordName').textContent = u.username || '';
     $('discordHandle').textContent = state.discordHandle ? '@' + state.discordHandle : '';
 
+    // Verified email
+    var ver = !!state.emailVerified;
+    $('verifyPill').textContent = ver ? 'Verified' : 'Not verified';
+    $('verifyPill').className = 'set-pill' + (ver ? ' on' : '');
+    $('verifyEmail').textContent = u.email;
+    show($('verifyBox'), !ver);
+
+    // Activity + email updates
+    renderHistory();
+    var n = state.notifications || {};
+    $('notifyUpdates').checked = !!n.updates;
+    $('notifyOffers').checked = !!n.offers;
+
     // Two-step login
     var on = !!state.twoFactor;
     $('twofaPill').textContent = on ? 'On' : 'Off';
@@ -172,6 +185,7 @@
       syncSession(state.user);
       render();
       show($('setLoading'), false); show($('setMain'), true);
+      loadOrders();
       if (location.hash){ var t = document.querySelector(location.hash); if (t) t.scrollIntoView(); }
     }).catch(function(err){
       if (err && err.message === 'signed-out') return;
@@ -180,18 +194,169 @@
   }
 
   // ---------- email ----------
+  var emailChallenge = null, emailPending = '';
+  function digitsOnly(id){ $(id).addEventListener('input', function(){ this.value = this.value.replace(/\D/g, '').slice(0, 6); }); }
+  digitsOnly('emailCode'); digitsOnly('verifyCode');
+  function emailReset(){
+    emailChallenge = null; emailPending = '';
+    show($('emailStep1'), true); show($('emailStep2'), false);
+    $('emailCode').value = ''; msg('emailMsg2', '');
+  }
   $('emailSave').addEventListener('click', function(){
     var btn = this, email = $('emailNew').value.trim(), pw = $('emailPw').value;
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ msg('emailMsg', 'Enter a valid email address.', 'err'); return; }
     if (!pw){ msg('emailMsg', 'Enter your current password.', 'err'); return; }
-    msg('emailMsg', ''); busy(btn, true);
+    msg('emailMsg', ''); busy(btn, true, 'Sending…');
     api('POST', '/api/me/email', { newEmail: email, password: pw }).then(function(r){
       busy(btn, false);
-      if (!r.ok){ msg('emailMsg', r.data.error || "Couldn't change your email.", 'err'); return; }
-      state.user = r.data.user; syncSession(r.data.user, r.data.token); render();
-      $('emailNew').value = ''; $('emailPw').value = '';
-      msg('emailMsg', 'Email changed to ' + r.data.user.email + '.', 'ok');
+      if (!r.ok){ msg('emailMsg', r.data.error || "Couldn't send a code.", 'err'); return; }
+      emailChallenge = r.data.challenge; emailPending = email;
+      $('emailNewHint').textContent = r.data.emailHint || email;
+      $('emailPw').value = '';
+      show($('emailStep1'), false); show($('emailStep2'), true); $('emailCode').focus();
     }).catch(function(e){ busy(btn, false); netError('emailMsg')(e); });
+  });
+  $('emailCancel').addEventListener('click', emailReset);
+  $('emailConfirm').addEventListener('click', function(){
+    var btn = this, code = $('emailCode').value;
+    if (!/^\d{6}$/.test(code)){ msg('emailMsg2', 'Enter the 6-digit code from the email.', 'err'); return; }
+    busy(btn, true, 'Changing…');
+    api('POST', '/api/me/email/confirm', { newEmail: emailPending, challenge: emailChallenge, code: code }).then(function(r){
+      busy(btn, false);
+      if (!r.ok){ msg('emailMsg2', r.data.error || "Couldn't change your email.", 'err'); return; }
+      state.user = r.data.user; state.emailVerified = true;
+      syncSession(r.data.user, r.data.token); render(); loadOrders();
+      emailReset(); $('emailNew').value = '';
+      msg('emailMsg', 'Email changed to ' + r.data.user.email + '.', 'ok');
+    }).catch(function(e){ busy(btn, false); netError('emailMsg2')(e); });
+  });
+
+  // ---------- verify email ----------
+  var verifyChallenge = null;
+  $('verifySend').addEventListener('click', function(){
+    var btn = this; busy(btn, true, 'Sending…');
+    api('POST', '/api/me/verify-email/start').then(function(r){
+      busy(btn, false);
+      if (!r.ok){ msg('verifyMsg', r.data.error || "Couldn't send a code.", 'err'); return; }
+      verifyChallenge = r.data.challenge;
+      btn.textContent = 'Send a new code';
+      show($('verifyStep'), true); $('verifyCode').focus();
+      msg('verifyMsg', 'Code sent. It works for 10 minutes.', 'ok');
+    }).catch(function(e){ busy(btn, false); netError('verifyMsg')(e); });
+  });
+  $('verifyGo').addEventListener('click', function(){
+    var btn = this, code = $('verifyCode').value;
+    if (!/^\d{6}$/.test(code)){ msg('verifyMsg', 'Enter the 6-digit code from the email.', 'err'); return; }
+    busy(btn, true, 'Checking…');
+    api('POST', '/api/me/verify-email/confirm', { challenge: verifyChallenge, code: code }).then(function(r){
+      busy(btn, false);
+      if (!r.ok){ msg('verifyMsg', r.data.error || "That code didn't work.", 'err'); return; }
+      state.emailVerified = true; render(); loadOrders();
+      toast('Email verified.');
+    }).catch(function(e){ busy(btn, false); netError('verifyMsg')(e); });
+  });
+
+  // ---------- login activity ----------
+  function when(iso){
+    var d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+  function li(left, sub, right){
+    var el = document.createElement('li');
+    var a = document.createElement('div'), b = document.createElement('b'); b.textContent = left; a.appendChild(b);
+    if (sub){ var s = document.createElement('small'); s.textContent = sub; a.appendChild(s); }
+    el.appendChild(a);
+    if (right){ right.classList.add('right'); el.appendChild(right); }
+    return el;
+  }
+  function emptyLi(text){ var el = document.createElement('li'); el.className = 'empty'; el.textContent = text; return el; }
+  function renderHistory(){
+    var list = $('historyList'); list.textContent = '';
+    var rows = state.loginHistory || [];
+    if (!rows.length){ list.appendChild(emptyLi('No logins recorded yet.')); return; }
+    rows.slice(0, 10).forEach(function(r, i){
+      var right = document.createElement('small');
+      right.textContent = r.ip ? 'IP ' + r.ip : '';
+      var label = r.device + (i === 0 ? ' · latest' : '');
+      var sub = when(r.at) + (r.method === 'password + email code' ? ' · with email code' : r.method === 'register' ? ' · account created' : '');
+      list.appendChild(li(label, sub, right));
+    });
+  }
+  $('logoutAll').addEventListener('click', function(){
+    var btn = this; busy(btn, true, 'Logging out…');
+    api('POST', '/api/me/logout-all').then(function(r){
+      busy(btn, false);
+      if (!r.ok){ msg('logoutMsg', r.data.error || "Couldn't log out other devices.", 'err'); return; }
+      syncSession(r.data.user, r.data.token);
+      msg('logoutMsg', 'Done. Every other device and browser has been logged out.', 'ok');
+    }).catch(function(e){ busy(btn, false); netError('logoutMsg')(e); });
+  });
+
+  // ---------- orders ----------
+  function loadOrders(){
+    var list = $('ordersList'); list.textContent = '';
+    list.appendChild(emptyLi('Loading…'));
+    api('GET', '/api/me/orders').then(function(r){
+      list.textContent = '';
+      if (!r.ok){ list.appendChild(emptyLi("Couldn't load your orders.")); return; }
+      if (!r.data.emailVerified){
+        var el = emptyLi(''), a = document.createElement('a');
+        a.href = '#sec-email'; a.textContent = 'Verify your email';
+        el.appendChild(a); el.appendChild(document.createTextNode(' to see your orders.'));
+        list.appendChild(el); return;
+      }
+      if (!r.data.orders.length){
+        list.appendChild(emptyLi('No orders with this email yet. Orders made before October 2026 aren\u2019t listed here, but your receipt email has the same link.'));
+        return;
+      }
+      r.data.orders.forEach(function(o){
+        var right = document.createElement('div');
+        var total = document.createElement('b'); total.textContent = o.total; right.appendChild(total);
+        if (o.refunded){ var tag = document.createElement('span'); tag.className = 'set-tag'; tag.textContent = 'Refunded'; total.appendChild(tag); }
+        else { var a = document.createElement('a'); a.href = o.keyUrl; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'License key'; right.appendChild(a); }
+        list.appendChild(li(o.product, when(o.date) + ' · Order ' + o.order, right));
+      });
+    }).catch(function(e){
+      if (e && e.message === 'signed-out') return;
+      list.textContent = ''; list.appendChild(emptyLi("Couldn't reach FixCore."));
+    });
+  }
+
+  // ---------- email updates ----------
+  function saveNotify(){
+    var body = { updates: $('notifyUpdates').checked, offers: $('notifyOffers').checked };
+    msg('notifyMsg', 'Saving…');
+    api('POST', '/api/me/notifications', body).then(function(r){
+      if (!r.ok){ msg('notifyMsg', r.data.error || "Couldn't save.", 'err'); return; }
+      state.notifications = r.data.notifications;
+      msg('notifyMsg', 'Saved.', 'ok');
+    }).catch(netError('notifyMsg'));
+  }
+  $('notifyUpdates').addEventListener('change', saveNotify);
+  $('notifyOffers').addEventListener('change', saveNotify);
+
+  // ---------- your data ----------
+  $('exportBtn').addEventListener('click', function(){
+    var btn = this; busy(btn, true, 'Preparing…'); msg('exportMsg', '');
+    fetch(API_BASE + '/api/me/export', { headers: { 'Authorization': 'Bearer ' + (session && session.authToken) } })
+      .then(function(res){
+        if (res.status === 401){ signedOut(); throw new Error('signed-out'); }
+        if (!res.ok) return res.json().catch(function(){ return {}; }).then(function(d){ throw new Error(d.error || "Couldn't download your data."); });
+        return res.blob();
+      })
+      .then(function(blob){
+        busy(btn, false);
+        var url = URL.createObjectURL(blob), a = document.createElement('a');
+        a.href = url; a.download = 'fixcore-my-data.json';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+        msg('exportMsg', 'Downloaded fixcore-my-data.json.', 'ok');
+      })
+      .catch(function(e){
+        busy(btn, false);
+        if (e && e.message === 'signed-out') return;
+        msg('exportMsg', (e && e.message) || "Couldn't download your data.", 'err');
+      });
   });
 
   // ---------- password ----------
@@ -243,7 +408,7 @@
     api('POST', '/api/me/2fa/enable', { challenge: twofaChallenge, code: code }).then(function(r){
       busy(btn, false);
       if (!r.ok){ msg('twofaMsg2', r.data.error || "Couldn't turn on two-step login.", 'err'); return; }
-      state.twoFactor = true; resetTwofa(); render();
+      state.twoFactor = true; state.emailVerified = true; resetTwofa(); render(); loadOrders();
       toast('Two-step login is on. You\'ll get a code by email when you log in.');
     }).catch(function(e){ busy(btn, false); netError('twofaMsg2')(e); });
   });

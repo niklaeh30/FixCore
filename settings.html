@@ -68,6 +68,26 @@
 .set-tab.active{background:var(--panel-3);color:var(--text);}
 .set-pill{display:inline-block;vertical-align:middle;margin-left:8px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid var(--line-2);color:var(--text-3);font-family:var(--font-body);}
 .set-pill.on{color:var(--ok);border-color:rgba(53,224,140,.4);background:rgba(53,224,140,.08);}
+.set-sub{font-size:15px;margin:4px 0 14px;color:var(--text);}
+.set-row-tight{margin:12px 0 4px;}
+.set-warn .field{margin-top:14px;}
+.set-list{list-style:none;margin:0 0 20px;padding:0;border-top:1px solid var(--line-2);max-width:620px;}
+.set-list li{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--line-2);font-size:14px;}
+.set-list li b{display:block;font-weight:600;color:var(--text);}
+.set-list li small{color:var(--text-3);font-size:12.5px;}
+.set-list li .right{text-align:right;flex-shrink:0;}
+.set-list li a{color:var(--link);font-size:13.5px;}
+.set-list .empty{color:var(--text-3);justify-content:flex-start;}
+.set-tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,107,129,.4);color:var(--danger);margin-left:6px;}
+.set-switch{display:flex;align-items:flex-start;gap:14px;padding:12px 0;cursor:pointer;max-width:560px;}
+.set-switch input{position:absolute;opacity:0;pointer-events:none;}
+.set-switch-ui{flex-shrink:0;width:42px;height:24px;border-radius:999px;background:var(--bg-2);border:1px solid var(--line-2);position:relative;transition:background .2s,border-color .2s;margin-top:2px;}
+.set-switch-ui::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--text-3);transition:transform .2s,background .2s;}
+.set-switch input:checked + .set-switch-ui{background:rgba(0,196,255,.18);border-color:rgba(0,196,255,.6);}
+.set-switch input:checked + .set-switch-ui::after{transform:translateX(18px);background:var(--cyan);}
+.set-switch input:focus-visible + .set-switch-ui{outline:2px solid var(--cyan);outline-offset:2px;}
+.set-switch b{display:block;font-weight:600;font-size:14.5px;}
+.set-switch small{display:block;color:var(--text-3);font-size:13px;margin-top:2px;}
 .set-danger{border-color:rgba(255,107,129,.35);}
 .set-danger h2{color:var(--danger);}
 .btn-danger{color:var(--danger);}
@@ -142,8 +162,12 @@
         <a href="#sec-email">Email</a>
         <a href="#sec-password">Password</a>
         <a href="#sec-2fa">Two-step login</a>
+        <a href="#sec-activity">Login activity</a>
         <a href="#sec-discord">Discord</a>
+        <a href="#sec-orders">Orders</a>
+        <a href="#sec-notify">Email updates</a>
         <a href="#sec-payout">Payout details</a>
+        <a href="#sec-data">Your data</a>
         <a href="#sec-delete" class="danger">Delete account</a>
       </nav>
 
@@ -160,12 +184,35 @@
         </section>
 
         <section class="set-card" id="sec-email">
-          <h2>Email</h2>
-          <p class="set-desc">You log in with this address and receipts are sent here. We'll send a notice to your old address when it changes.</p>
-          <div class="field"><label for="emailNew">New email</label><input type="email" id="emailNew" autocomplete="email" placeholder="you@example.com"></div>
-          <div class="field"><label for="emailPw">Current password</label><input type="password" id="emailPw" autocomplete="current-password"></div>
-          <p class="set-msg" id="emailMsg" role="status"></p>
-          <button type="button" class="btn btn-primary" id="emailSave">Change email</button>
+          <h2>Email <span class="set-pill" id="verifyPill">Not verified</span></h2>
+          <p class="set-desc">You log in with this address and receipts are sent here.</p>
+          <div class="set-warn" id="verifyBox" hidden>
+            Verify your email to see your orders here. We'll send a 6-digit code to <b id="verifyEmail"></b>.
+            <div class="set-row set-row-tight">
+              <button type="button" class="btn btn-ghost" id="verifySend">Send code</button>
+            </div>
+            <div id="verifyStep" hidden>
+              <div class="field"><label for="verifyCode">Code</label><input type="text" id="verifyCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
+              <button type="button" class="btn btn-primary" id="verifyGo">Verify email</button>
+            </div>
+            <p class="set-msg" id="verifyMsg" role="status"></p>
+          </div>
+          <h3 class="set-sub">Change email</h3>
+          <div id="emailStep1">
+            <div class="field"><label for="emailNew">New email</label><input type="email" id="emailNew" autocomplete="email" placeholder="you@example.com"></div>
+            <div class="field"><label for="emailPw">Current password</label><input type="password" id="emailPw" autocomplete="current-password"></div>
+            <p class="set-msg" id="emailMsg" role="status"></p>
+            <button type="button" class="btn btn-primary" id="emailSave">Send code to new email</button>
+          </div>
+          <div id="emailStep2" hidden>
+            <p class="set-desc">We sent a 6-digit code to <b id="emailNewHint"></b>. Enter it to finish. Your old address gets a notice when it changes.</p>
+            <div class="field"><label for="emailCode">Code</label><input type="text" id="emailCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
+            <p class="set-msg" id="emailMsg2" role="status"></p>
+            <div class="set-row">
+              <button type="button" class="btn btn-primary" id="emailConfirm">Change email</button>
+              <button type="button" class="btn btn-text" id="emailCancel">Cancel</button>
+            </div>
+          </div>
         </section>
 
         <section class="set-card" id="sec-password">
@@ -218,6 +265,14 @@
           </div>
         </section>
 
+        <section class="set-card" id="sec-activity">
+          <h2>Login activity</h2>
+          <p class="set-desc">The last times someone logged in to your account. Don't recognise one? Change your password and log out everywhere.</p>
+          <ul class="set-list" id="historyList"></ul>
+          <p class="set-msg" id="logoutMsg" role="status"></p>
+          <button type="button" class="btn btn-ghost" id="logoutAll">Log out everywhere else</button>
+        </section>
+
         <section class="set-card" id="sec-discord">
           <h2>Discord</h2>
           <p class="set-desc">Your purchases, downloads and referral code come from the Discord account linked here.</p>
@@ -241,6 +296,21 @@
           </div>
         </section>
 
+        <section class="set-card" id="sec-orders">
+          <h2>Orders</h2>
+          <p class="set-desc">Things you've bought with this email, with a link to your license key.</p>
+          <ul class="set-list" id="ordersList"></ul>
+          <p class="set-msg" id="ordersMsg" role="status"></p>
+        </section>
+
+        <section class="set-card" id="sec-notify">
+          <h2>Email updates</h2>
+          <p class="set-desc">Pick what we may email you about. Receipts and security emails are always sent.</p>
+          <label class="set-switch"><input type="checkbox" id="notifyUpdates"><span class="set-switch-ui" aria-hidden="true"></span><span><b>New versions</b><small>When FixCore, Ultimate or NettBoost gets an update.</small></span></label>
+          <label class="set-switch"><input type="checkbox" id="notifyOffers"><span class="set-switch-ui" aria-hidden="true"></span><span><b>Offers and news</b><small>Sales, discount codes and new products. A few times a year.</small></span></label>
+          <p class="set-msg" id="notifyMsg" role="status"></p>
+        </section>
+
         <section class="set-card" id="sec-payout">
           <h2>Payout details</h2>
           <p class="set-desc">Save where your affiliate payouts should go, so you don't have to type it every time you cash out.</p>
@@ -261,6 +331,13 @@
             <button type="button" class="btn btn-primary" id="payoutSave">Save payout details</button>
             <button type="button" class="btn btn-text" id="payoutClear" hidden>Remove saved details</button>
           </div>
+        </section>
+
+        <section class="set-card" id="sec-data">
+          <h2>Your data</h2>
+          <p class="set-desc">Download a copy of everything FixCore has saved about your account, as a JSON file. Passwords and codes aren't included.</p>
+          <p class="set-msg" id="exportMsg" role="status"></p>
+          <button type="button" class="btn btn-ghost" id="exportBtn">Download my data</button>
         </section>
 
         <section class="set-card set-danger" id="sec-delete">
@@ -330,7 +407,7 @@
 
 <div class="toast" id="toast"><span class="dot"></span><span id="toastText"></span></div>
 
-<script src="assets/settings.js?v=2"></script>
+<script src="assets/settings.js?v=3"></script>
 <script src="assets/fixcore-shell.js?v=22"></script>
 </body>
 </html>
