@@ -306,17 +306,32 @@
   document.getElementById('orderSearchBtn').addEventListener('click', loadOrders);
   orderSearch.addEventListener('keydown', function(e){ if (e.key === 'Enter') loadOrders(); });
 
-  // ---------- discount codes ----------
+  // ---------- discount codes (products + exact start/end) ----------
+  function when(sec){
+    if (!sec) return '';
+    return new Date(sec * 1000).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+  var promoProductsDrawn = false;
+  function drawPromoProducts(products){
+    if (promoProductsDrawn || !products) return;
+    promoProductsDrawn = true;
+    document.getElementById('promoProducts').innerHTML = products.map(function(p){
+      return '<label class="' + (p.available ? '' : 'off') + '" title="' + (p.available ? '' : 'Add ' + esc(p.env) + ' on Railway to use this') + '">' +
+        '<input type="checkbox" value="' + esc(p.key) + '"' + (p.available ? '' : ' disabled') + '> ' + esc(p.name) + '</label>';
+    }).join('');
+  }
   function loadPromos(){
     var body = document.getElementById('promoBody'), m = document.getElementById('promoMsg');
     api('/api/admin/promo-codes').then(function(r){
       if (!r.ok){ m.textContent = (r.d && r.d.error) || 'Could not load codes.'; body.innerHTML = ''; return; }
+      drawPromoProducts(r.d.products);
       var items = r.d.codes || [];
       body.innerHTML = items.length ? items.map(function(c){
-        var exp = c.expires ? new Date(c.expires * 1000).toISOString().slice(0, 10) : 'Never';
-        return '<tr><td><code>' + esc(c.code) + '</code></td><td>' + esc(c.off) + '</td><td>' + esc(c.used) + (c.max ? ' / ' + esc(c.max) : '') +
-          '</td><td>' + esc(exp) + '</td><td><button type="button" class="acct-act danger" data-promo="' + esc(c.id) + '" data-code="' + esc(c.code) + '">Turn off</button></td></tr>';
-      }).join('') : '<tr><td colspan="5">No active codes.</td></tr>';
+        var tag = c.status === 'scheduled' ? '<span class="tag-soon">Starts later</span>' : '';
+        return '<tr><td><code>' + esc(c.code) + '</code>' + tag + '</td><td>' + esc(c.off) + '</td><td>' + esc((c.products || []).join(', ')) +
+          '</td><td>' + esc(when(c.starts) || 'Now') + '</td><td>' + esc(when(c.ends) || 'Never') + '</td><td>' + esc(c.used) + (c.max ? ' / ' + esc(c.max) : '') +
+          '</td><td><button type="button" class="acct-act danger" data-promo="' + esc(c.id) + '" data-code="' + esc(c.code) + '">Turn off</button></td></tr>';
+      }).join('') : '<tr><td colspan="7">No active or upcoming codes.</td></tr>';
     }).catch(function(){ m.textContent = 'Could not reach the server.'; });
   }
   document.getElementById('promoBody').addEventListener('click', function(e){
@@ -329,22 +344,36 @@
       loadPromos();
     });
   });
+  function toUnix(id){
+    var v = document.getElementById(id).value;   // local time from the date picker
+    if (!v) return null;
+    var t = new Date(v).getTime();
+    return isNaN(t) ? NaN : Math.floor(t / 1000);
+  }
   document.getElementById('promoCreate').addEventListener('click', function(){
     var btn = this, m = document.getElementById('promoMsg');
+    var starts = toUnix('promoStart'), ends = toUnix('promoEnd');
+    var products = [].map.call(document.querySelectorAll('#promoProducts input:checked'), function(x){ return x.value; });
     var body = {
       code: document.getElementById('promoCode').value.trim().toUpperCase(),
       type: document.getElementById('promoType').value,
       value: document.getElementById('promoValue').value,
       maxUses: document.getElementById('promoMax').value || null,
-      days: document.getElementById('promoDays').value || null
+      startsAt: starts, endsAt: ends, products: products
     };
     if (!body.code || !body.value){ m.textContent = 'Fill in the code and how much it takes off.'; return; }
+    if (isNaN(starts) || isNaN(ends)){ m.textContent = 'The start or end time isn\u2019t valid.'; return; }
+    if (starts && ends && ends <= starts){ m.textContent = 'The end has to be after the start.'; return; }
+    var what = (products.length ? 'for ' + products.length + ' product' + (products.length === 1 ? '' : 's') : 'for all products') +
+      ', ' + (starts && starts * 1000 > Date.now() ? 'starting ' + when(starts) : 'starting now') + (ends ? ', ending ' + when(ends) : ', never ending');
+    if (!window.confirm('Create ' + body.code + ' ' + what + '?')) return;
     btn.disabled = true; m.textContent = 'Creating…';
     post('/api/admin/promo-codes', body).then(function(r){
       btn.disabled = false;
       if (!r.ok){ m.textContent = (r.d && r.d.error) || 'Could not create the code.'; return; }
-      m.textContent = r.d.code + ' is live. Customers can use it at checkout now.';
-      ['promoCode', 'promoValue', 'promoMax', 'promoDays'].forEach(function(id){ document.getElementById(id).value = ''; });
+      m.textContent = r.d.scheduled ? r.d.code + ' is ready and turns on by itself at ' + when(starts) + '.' : r.d.code + ' is live. Customers can use it at checkout now.';
+      ['promoCode', 'promoValue', 'promoMax', 'promoStart', 'promoEnd'].forEach(function(id){ document.getElementById(id).value = ''; });
+      [].forEach.call(document.querySelectorAll('#promoProducts input'), function(x){ x.checked = false; });
       loadPromos();
     }).catch(function(){ btn.disabled = false; m.textContent = 'Could not reach the server.'; });
   });

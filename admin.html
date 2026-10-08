@@ -24,7 +24,14 @@
 .status-item.ok .status-dot{background:var(--ok);box-shadow:0 0 0 3px rgba(53,224,140,.15);}
 .status-item b{display:block;font-size:14px;}
 .status-item small{color:var(--text-3);font-size:12.5px;overflow-wrap:anywhere;}
-.promo-form{display:grid;grid-template-columns:1.4fr .8fr .8fr .8fr .9fr auto;gap:10px;align-items:end;margin-bottom:8px;}
+.promo-form{display:grid;grid-template-columns:1.4fr .8fr .8fr .8fr;gap:10px;align-items:end;margin-bottom:10px;}
+.promo-form-2{grid-template-columns:1fr 1fr 1.4fr auto;}
+.promo-form input[type=datetime-local]{color-scheme:dark;}
+.promo-products{border:1px solid var(--line-2);border-radius:var(--r-sm);padding:6px 12px 8px;margin:0;min-height:46px;}
+.promo-products legend{font-size:13px;color:var(--text-2);padding:0 4px;}
+.promo-products label{display:inline-flex;align-items:center;gap:6px;margin-right:14px;font-size:14px;cursor:pointer;}
+.promo-products label.off{color:var(--text-3);cursor:not-allowed;}
+.tag-soon{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid rgba(255,180,84,.45);color:var(--warn);margin-left:6px;}
 .promo-form .field{margin:0;}
 .promo-form select,#nlAudience,#promoType{width:100%;}
 #nlBody{width:100%;min-height:150px;resize:vertical;font:inherit;}
@@ -32,7 +39,7 @@
 .admin-block .field textarea{height:auto;padding:12px;}
 .tag-bad{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid rgba(255,107,129,.4);color:var(--danger);margin-left:6px;}
 .mini-list{margin:6px 0 0;padding-left:18px;color:var(--text-2);font-size:13px;}
-@media (max-width:860px){.promo-form{grid-template-columns:1fr 1fr;}}
+@media (max-width:860px){.promo-form,.promo-form-2{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
 <body class="page-admin">
@@ -114,11 +121,15 @@
           <div class="field"><label for="promoType">Type</label><select id="promoType"><option value="percent">% off</option><option value="amount">$ off</option></select></div>
           <div class="field"><label for="promoValue">How much</label><input type="number" id="promoValue" min="0.5" step="0.5" placeholder="20"></div>
           <div class="field"><label for="promoMax">Max uses <span class="opt">(optional)</span></label><input type="number" id="promoMax" min="1" step="1"></div>
-          <div class="field"><label for="promoDays">Works for days <span class="opt">(optional)</span></label><input type="number" id="promoDays" min="1" max="365" step="1"></div>
+        </div>
+        <div class="promo-form promo-form-2">
+          <div class="field"><label for="promoStart">Starts <span class="opt">(empty = now)</span></label><input type="datetime-local" id="promoStart"></div>
+          <div class="field"><label for="promoEnd">Ends <span class="opt">(empty = never)</span></label><input type="datetime-local" id="promoEnd"></div>
+          <fieldset class="promo-products"><legend>Products <span class="opt">(none ticked = all)</span></legend><div id="promoProducts"><span class="opt">Loading…</span></div></fieldset>
           <button class="btn btn-primary" id="promoCreate" type="button">Create code</button>
         </div>
         <p class="admin-msg" id="promoMsg"></p>
-        <div class="table-wrap"><table class="admin-table"><thead><tr><th>Code</th><th>Discount</th><th>Used</th><th>Expires</th><th></th></tr></thead><tbody id="promoBody"></tbody></table></div>
+        <div class="table-wrap"><table class="admin-table"><thead><tr><th>Code</th><th>Discount</th><th>Products</th><th>Starts</th><th>Ends</th><th>Used</th><th></th></tr></thead><tbody id="promoBody"></tbody></table></div>
       </section>
 
       <section class="admin-block">
@@ -143,6 +154,6 @@
     </div>
   </div>
 </main>
-<script src="assets/admin.js?v=2"></script>
+<script src="assets/admin.js?v=3"></script>
 </body>
 </html>
