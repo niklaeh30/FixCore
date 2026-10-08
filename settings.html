@@ -66,6 +66,8 @@
 .set-tabs{display:inline-flex;gap:4px;padding:4px;margin-bottom:18px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--bg-2);}
 .set-tab{border:0;background:none;color:var(--text-2);font:inherit;font-size:14px;padding:8px 16px;border-radius:8px;cursor:pointer;}
 .set-tab.active{background:var(--panel-3);color:var(--text);}
+.set-pill{display:inline-block;vertical-align:middle;margin-left:8px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid var(--line-2);color:var(--text-3);font-family:var(--font-body);}
+.set-pill.on{color:var(--ok);border-color:rgba(53,224,140,.4);background:rgba(53,224,140,.08);}
 .set-danger{border-color:rgba(255,107,129,.35);}
 .set-danger h2{color:var(--danger);}
 .btn-danger{color:var(--danger);}
@@ -139,6 +141,7 @@
         <a href="#sec-profile">Profile</a>
         <a href="#sec-email">Email</a>
         <a href="#sec-password">Password</a>
+        <a href="#sec-2fa">Two-step login</a>
         <a href="#sec-discord">Discord</a>
         <a href="#sec-payout">Payout details</a>
         <a href="#sec-delete" class="danger">Delete account</a>
@@ -175,6 +178,43 @@
           <div class="set-row">
             <button type="button" class="btn btn-primary" id="pwSave">Change password</button>
             <a class="set-link" href="index.html#account">Forgot your password?</a>
+          </div>
+        </section>
+
+        <section class="set-card" id="sec-2fa">
+          <h2>Two-step login <span class="set-pill" id="twofaPill">Off</span></h2>
+          <p class="set-desc">When it's on, we email you a 6-digit code every time you log in. Someone who learns your password still can't get into your account without your email.</p>
+          <div id="twofaOff">
+            <button type="button" class="btn btn-primary" id="twofaOpen">Turn on</button>
+            <div class="set-confirm" id="twofaStep1" hidden>
+              <div class="field"><label for="twofaPw">Current password</label><input type="password" id="twofaPw" autocomplete="current-password"></div>
+              <p class="set-msg" id="twofaMsg1" role="status"></p>
+              <div class="set-row">
+                <button type="button" class="btn btn-primary" id="twofaSend">Email me a code</button>
+                <button type="button" class="btn btn-text" id="twofaCancel1">Cancel</button>
+              </div>
+            </div>
+            <div class="set-confirm" id="twofaStep2" hidden>
+              <p>We sent a 6-digit code to <b id="twofaHint"></b>. Enter it to turn on two-step login.</p>
+              <div class="field"><label for="twofaCode">Code</label><input type="text" id="twofaCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
+              <p class="set-msg" id="twofaMsg2" role="status"></p>
+              <div class="set-row">
+                <button type="button" class="btn btn-primary" id="twofaEnable">Turn on two-step login</button>
+                <button type="button" class="btn btn-text" id="twofaCancel2">Cancel</button>
+              </div>
+            </div>
+          </div>
+          <div id="twofaOn" hidden>
+            <button type="button" class="btn btn-ghost" id="twofaOffOpen">Turn off</button>
+            <div class="set-confirm" id="twofaOffStep" hidden>
+              <p>Without two-step login, your password is all anyone needs to get into your account.</p>
+              <div class="field"><label for="twofaOffPw">Current password</label><input type="password" id="twofaOffPw" autocomplete="current-password"></div>
+              <p class="set-msg" id="twofaMsg3" role="status"></p>
+              <div class="set-row">
+                <button type="button" class="btn btn-ghost" id="twofaDisable">Turn off two-step login</button>
+                <button type="button" class="btn btn-text" id="twofaCancel3">Cancel</button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -290,7 +330,7 @@
 
 <div class="toast" id="toast"><span class="dot"></span><span id="toastText"></span></div>
 
-<script src="assets/settings.js?v=1"></script>
+<script src="assets/settings.js?v=2"></script>
 <script src="assets/fixcore-shell.js?v=22"></script>
 </body>
 </html>

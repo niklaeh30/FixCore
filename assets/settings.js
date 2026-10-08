@@ -139,6 +139,12 @@
     $('discordName').textContent = u.username || '';
     $('discordHandle').textContent = state.discordHandle ? '@' + state.discordHandle : '';
 
+    // Two-step login
+    var on = !!state.twoFactor;
+    $('twofaPill').textContent = on ? 'On' : 'Off';
+    $('twofaPill').className = 'set-pill' + (on ? ' on' : '');
+    show($('twofaOn'), on); show($('twofaOff'), !on);
+
     // Payout details
     var p = state.payout;
     setTab(p && p.method === 'bank' ? 'bank' : 'paypal');
@@ -202,6 +208,56 @@
       $('pwCurrent').value = $('pwNew').value = $('pwRepeat').value = '';
       msg('pwMsg', 'Password changed. Other devices have been signed out.', 'ok');
     }).catch(function(e){ busy(btn, false); netError('pwMsg')(e); });
+  });
+
+  // ---------- two-step login ----------
+  var twofaChallenge = null;
+  function resetTwofa(){
+    twofaChallenge = null;
+    show($('twofaOpen'), true); show($('twofaStep1'), false); show($('twofaStep2'), false);
+    show($('twofaOffOpen'), true); show($('twofaOffStep'), false);
+    $('twofaPw').value = $('twofaCode').value = $('twofaOffPw').value = '';
+    msg('twofaMsg1', ''); msg('twofaMsg2', ''); msg('twofaMsg3', '');
+  }
+  $('twofaOpen').addEventListener('click', function(){ show(this, false); show($('twofaStep1'), true); $('twofaPw').focus(); });
+  $('twofaCancel1').addEventListener('click', resetTwofa);
+  $('twofaCancel2').addEventListener('click', resetTwofa);
+  $('twofaCancel3').addEventListener('click', resetTwofa);
+  $('twofaSend').addEventListener('click', function(){
+    var btn = this, pw = $('twofaPw').value;
+    if (!pw){ msg('twofaMsg1', 'Enter your current password.', 'err'); return; }
+    busy(btn, true, 'Sending…');
+    api('POST', '/api/me/2fa/start', { password: pw }).then(function(r){
+      busy(btn, false);
+      if (!r.ok){ msg('twofaMsg1', r.data.error || "Couldn't send a code.", 'err'); return; }
+      twofaChallenge = r.data.challenge;
+      $('twofaHint').textContent = r.data.emailHint || 'your email';
+      show($('twofaStep1'), false); show($('twofaStep2'), true); $('twofaCode').focus();
+    }).catch(function(e){ busy(btn, false); netError('twofaMsg1')(e); });
+  });
+  $('twofaCode').addEventListener('input', function(){ this.value = this.value.replace(/\D/g, '').slice(0, 6); });
+  $('twofaEnable').addEventListener('click', function(){
+    var btn = this, code = $('twofaCode').value;
+    if (!/^\d{6}$/.test(code)){ msg('twofaMsg2', 'Enter the 6-digit code from the email.', 'err'); return; }
+    busy(btn, true, 'Turning on…');
+    api('POST', '/api/me/2fa/enable', { challenge: twofaChallenge, code: code }).then(function(r){
+      busy(btn, false);
+      if (!r.ok){ msg('twofaMsg2', r.data.error || "Couldn't turn on two-step login.", 'err'); return; }
+      state.twoFactor = true; resetTwofa(); render();
+      toast('Two-step login is on. You\'ll get a code by email when you log in.');
+    }).catch(function(e){ busy(btn, false); netError('twofaMsg2')(e); });
+  });
+  $('twofaOffOpen').addEventListener('click', function(){ show(this, false); show($('twofaOffStep'), true); $('twofaOffPw').focus(); });
+  $('twofaDisable').addEventListener('click', function(){
+    var btn = this, pw = $('twofaOffPw').value;
+    if (!pw){ msg('twofaMsg3', 'Enter your current password.', 'err'); return; }
+    busy(btn, true, 'Turning off…');
+    api('POST', '/api/me/2fa/disable', { password: pw }).then(function(r){
+      busy(btn, false);
+      if (!r.ok){ msg('twofaMsg3', r.data.error || "Couldn't turn off two-step login.", 'err'); return; }
+      state.twoFactor = false; resetTwofa(); render();
+      toast('Two-step login is off.');
+    }).catch(function(e){ busy(btn, false); netError('twofaMsg3')(e); });
   });
 
   // ---------- Discord ----------
