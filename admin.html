@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-4jwS/jFSSTjg0Cn+VwCt4DqLTVGaSCLRP+4+tUSgFzM='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self' https://web-production-fae792.up.railway.app https://worker-production-8250.up.railway.app https://discord.com https://discordapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://cdn.discordapp.com https://media.discordapp.net; connect-src 'self' https://web-production-fae792.up.railway.app https://worker-production-8250.up.railway.app https://discord.com https://discordapp.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — FixCore</title>
@@ -13,6 +13,24 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/fixcore.css?v=23">
+<style>
+.btn-sm{height:34px;padding:0 14px;font-size:13px;}
+.status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
+.status-item{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--bg-2);}
+.status-dot{width:10px;height:10px;border-radius:50%;margin-top:5px;flex-shrink:0;background:var(--danger);box-shadow:0 0 0 3px rgba(255,107,129,.15);}
+.status-item.ok .status-dot{background:var(--ok);box-shadow:0 0 0 3px rgba(53,224,140,.15);}
+.status-item b{display:block;font-size:14px;}
+.status-item small{color:var(--text-3);font-size:12.5px;overflow-wrap:anywhere;}
+.promo-form{display:grid;grid-template-columns:1.4fr .8fr .8fr .8fr .9fr auto;gap:10px;align-items:end;margin-bottom:8px;}
+.promo-form .field{margin:0;}
+.promo-form select,#nlAudience,#promoType{width:100%;}
+#nlBody{width:100%;min-height:150px;resize:vertical;font:inherit;}
+.admin-block .field select,.admin-block .field textarea{width:100%;height:46px;padding:0 12px;border-radius:var(--r-sm);border:1px solid var(--line-2);background:rgba(4,5,14,.6);color:var(--text);font:inherit;}
+.admin-block .field textarea{height:auto;padding:12px;}
+.tag-bad{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid rgba(255,107,129,.4);color:var(--danger);margin-left:6px;}
+.mini-list{margin:6px 0 0;padding-left:18px;color:var(--text-2);font-size:13px;}
+@media (max-width:860px){.promo-form{grid-template-columns:1fr 1fr;}}
+</style>
 </head>
 <body class="page-admin">
 <div class="page-bg" aria-hidden="true"></div>
@@ -37,6 +55,14 @@
       <section class="admin-block">
         <h2>Overview</h2>
         <div class="admin-stats" id="adminStats"></div>
+      </section>
+
+      <section class="admin-block">
+        <div class="admin-block-head">
+          <h2>System status</h2>
+          <button class="btn btn-ghost btn-sm" id="statusBtn" type="button">Check again</button>
+        </div>
+        <div class="status-grid" id="statusList"><p class="admin-msg">Checking…</p></div>
       </section>
 
       <section class="admin-block">
@@ -66,6 +92,46 @@
       </section>
 
       <section class="admin-block">
+        <h2>Orders</h2>
+        <p>Every paid checkout since the order list was added (8 Oct 2026). Refunds show up when Stripe sends <code>charge.refunded</code>.</p>
+        <div class="admin-bar">
+          <div class="field"><label for="orderSearch">Search by email or order number</label><input type="text" id="orderSearch" autocomplete="off" spellcheck="false"></div>
+          <button class="btn btn-ghost" id="orderSearchBtn" type="button">Search</button>
+        </div>
+        <p class="admin-msg" id="orderMsg"></p>
+        <div class="table-wrap"><table class="admin-table"><thead><tr><th>Date</th><th>Email</th><th>Product</th><th>Paid</th><th>Order</th></tr></thead><tbody id="orderBody"></tbody></table></div>
+      </section>
+
+      <section class="admin-block">
+        <h2>Discount codes</h2>
+        <p>Codes customers type at checkout. Affiliate credit codes (FCCREDIT…) aren't listed here.</p>
+        <div class="promo-form">
+          <div class="field"><label for="promoCode">Code</label><input type="text" id="promoCode" maxlength="24" placeholder="BLACKFRIDAY20" autocomplete="off" spellcheck="false"></div>
+          <div class="field"><label for="promoType">Type</label><select id="promoType"><option value="percent">% off</option><option value="amount">$ off</option></select></div>
+          <div class="field"><label for="promoValue">How much</label><input type="number" id="promoValue" min="0.5" step="0.5" placeholder="20"></div>
+          <div class="field"><label for="promoMax">Max uses <span class="opt">(optional)</span></label><input type="number" id="promoMax" min="1" step="1"></div>
+          <div class="field"><label for="promoDays">Works for days <span class="opt">(optional)</span></label><input type="number" id="promoDays" min="1" max="365" step="1"></div>
+          <button class="btn btn-primary" id="promoCreate" type="button">Create code</button>
+        </div>
+        <p class="admin-msg" id="promoMsg"></p>
+        <div class="table-wrap"><table class="admin-table"><thead><tr><th>Code</th><th>Discount</th><th>Used</th><th>Expires</th><th></th></tr></thead><tbody id="promoBody"></tbody></table></div>
+      </section>
+
+      <section class="admin-block">
+        <h2>Newsletter</h2>
+        <p>Goes only to accounts that said yes in Settings. Every email has an unsubscribe link. The free Resend plan sends about 100 emails a day.</p>
+        <div class="field"><label for="nlAudience">Send to</label><select id="nlAudience"><option value="updates">People who want new versions</option><option value="offers">People who want offers and news</option></select></div>
+        <div class="field"><label for="nlSubject">Subject</label><input type="text" id="nlSubject" maxlength="150" placeholder="FixCore 2.2 is out"></div>
+        <div class="field"><label for="nlBody">Text <span class="opt">(empty line = new paragraph)</span></label><textarea id="nlBody" rows="8" placeholder="Hi! FixCore 2.2 is out with…"></textarea></div>
+        <div class="admin-bar">
+          <div class="field"><label for="nlTest">Send a test to</label><input type="email" id="nlTest" placeholder="you@example.com"></div>
+          <button class="btn btn-ghost" id="nlTestBtn" type="button">Send test</button>
+          <button class="btn btn-primary" id="nlSend" type="button">Send</button>
+        </div>
+        <p class="admin-msg" id="nlMsg"></p>
+      </section>
+
+      <section class="admin-block">
         <h2>Recent affiliate sales</h2>
         <p class="admin-msg" id="salesMsg"></p>
         <div class="table-wrap"><table class="admin-table"><thead><tr><th>Date</th><th>Affiliate code</th><th>Paid</th><th>Commission</th></tr></thead><tbody id="salesBody"></tbody></table></div>
@@ -73,264 +139,6 @@
     </div>
   </div>
 </main>
-<script>
-(function(){
-  "use strict";
-  if (window.top !== window.self){ document.documentElement.style.display = 'none'; return; }
-  var API_BASE = 'https://web-production-fae792.up.railway.app';
-  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-  function money(n){ return '$' + Number(n || 0).toFixed(2); }
-  // Sign-in: straight through Discord (no FixCore login needed). If you've used
-  // FixCore's Discord login before, Discord sends you right back without asking.
-  var DISCORD_CLIENT_ID = '1539670021532422154';
-  function store(key, value){ try { if (value === null) sessionStorage.removeItem(key); else sessionStorage.setItem(key, value); } catch (e) {} }
-  function read(key){ try { return sessionStorage.getItem(key); } catch (e) { return null; } }
-  var discordToken = read('fixcoreAdminDiscordToken');
-  var authError = read('fixcoreAdminAuthError');
-  store('fixcoreAdminAuthError', null);
-  function signInWithDiscord(auto){
-    store('fixcoreAdminAuth', '1');
-    if (auto) store('fixcoreAdminAutoTried', '1');
-    var q = new URLSearchParams({ client_id: DISCORD_CLIENT_ID, redirect_uri: 'https://fixcorepc.com/callback.html',
-      response_type: 'token', scope: 'identify guilds.members.read', prompt: 'none' });
-    window.location.href = 'https://discord.com/api/oauth2/authorize?' + q.toString();
-  }
-  function headers(){ return { 'Content-Type': 'application/json', 'X-Discord-Token': discordToken || '' }; }
-  function api(path, opts){
-    opts = opts || {};
-    opts.headers = headers();
-    return fetch(API_BASE + path, opts).then(function(res){
-      return res.json().catch(function(){ return {}; }).then(function(d){ return { ok: res.ok, status: res.status, d: d }; });
-    });
-  }
-  var who = document.getElementById('adminWho');
-  var gate = document.getElementById('adminGate');
-  var gateText = document.getElementById('adminGateText');
-  var gateBtn = document.getElementById('adminGateBtn');
-  var app = document.getElementById('adminApp');
-  function showGate(text, btnText, action){
-    who.textContent = 'This page is only for FixCore admins.';
-    gateText.textContent = text;
-    gateBtn.hidden = !btnText;
-    if (btnText){
-      gateBtn.textContent = btnText;
-      gateBtn.onclick = function(e){
-        if (typeof action === 'function'){ e.preventDefault(); action(); }
-      };
-      gateBtn.href = typeof action === 'string' ? action : '#';
-    }
-    gate.hidden = false; app.hidden = true;
-  }
-  function discordGate(text){ showGate(text, 'Sign in with Discord', function(){ signInWithDiscord(false); }); }
-
-  // ---------- overview ----------
-  function loadOverview(){
-    api('/api/admin/overview').then(function(r){
-      if (!r.ok) return;
-      var o = r.d;
-      var cards = [
-        [o.accounts, 'Accounts'], [o.newAccounts7d || 0, 'New accounts (7 days)'], [o.discordLinked, 'With Discord linked'],
-        [o.affiliates, 'Affiliates'], [o.blocked || 0, 'Blocked accounts', (o.blocked || 0) > 0],
-        [o.sales, 'Affiliate sales'], [money(o.salesRevenue), 'Revenue from affiliate sales'], [money(o.commission), 'Commission earned'],
-        [o.pendingPayouts + ' · ' + money(o.pendingPayoutAmount), 'Payouts waiting', o.pendingPayouts > 0],
-        [money(o.paidOut), 'Paid out'], [money(o.creditsUsed), 'Turned into discount codes'], [money(o.owedAvailable), 'Available in all balances']
-      ];
-      document.getElementById('adminStats').innerHTML = cards.map(function(c){
-        return '<div class="admin-stat' + (c[2] ? ' hot' : '') + '"><b>' + esc(c[0]) + '</b><span>' + esc(c[1]) + '</span></div>';
-      }).join('');
-    });
-  }
-
-  // ---------- payouts ----------
-  var filter = document.getElementById('adminFilter');
-  var list = document.getElementById('adminList');
-  var msg = document.getElementById('adminMsg');
-  function row(label, value){ return value ? '<dt>' + esc(label) + '</dt><dd>' + esc(value) + '</dd>' : ''; }
-  function loadPayouts(){
-    msg.textContent = 'Loading…'; list.innerHTML = '';
-    api('/api/admin/payouts?status=' + encodeURIComponent(filter.value)).then(function(r){
-      if (!r.ok){ msg.textContent = (r.d && r.d.error) || 'Could not load payouts.'; return; }
-      var items = r.d.payouts || [];
-      msg.textContent = items.length ? items.length + ' request' + (items.length === 1 ? '' : 's') : 'Nothing here.';
-      list.innerHTML = items.map(function(p){
-        var det = p.details || {};
-        var dl = p.method === 'paypal' ? row('PayPal', det.paypalEmail)
-          : row('Holder', det.holder) + row('Account', det.account) + row('SWIFT/BIC', det.swift);
-        var actions = p.status === 'pending'
-          ? '<div class="payout-actions"><button class="btn btn-primary" data-id="' + p.id + '" data-status="paid" type="button">Mark as paid</button>' +
-            '<button class="btn btn-ghost" data-id="' + p.id + '" data-status="rejected" type="button">Reject</button></div>' : '';
-        return '<div class="payout-card"><div class="payout-top"><span class="amt">' + money(p.amount) + '</span>' +
-          '<span class="who">#' + p.id + ' · ' + esc(p.code || p.username) + ' · ' + esc(p.email) + ' · ' + esc((p.created_at || '').slice(0, 10)) + '</span>' +
-          '<span class="aff-status s-' + esc(p.status) + '">' + esc(p.status) + '</span></div>' +
-          '<dl class="payout-details">' + row('Method', p.method === 'paypal' ? 'PayPal' : 'Bank transfer') + dl + '</dl>' + actions + '</div>';
-      }).join('');
-    }).catch(function(){ msg.textContent = 'Could not reach the server.'; });
-  }
-  list.addEventListener('click', function(e){
-    var btn = e.target.closest('button[data-id]');
-    if (!btn) return;
-    var status = btn.getAttribute('data-status');
-    if (!window.confirm(status === 'paid' ? 'Mark this payout as paid? Only do this after you have sent the money.' : 'Reject this payout? The amount goes back to their balance.')) return;
-    btn.disabled = true;
-    api('/api/admin/payouts/' + btn.getAttribute('data-id'), { method: 'POST', body: JSON.stringify({ status: status }) })
-      .then(function(r){ if (!r.ok) window.alert((r.d && r.d.error) || 'Could not update.'); loadPayouts(); loadOverview(); })
-      .catch(function(){ window.alert('Could not reach the server.'); btn.disabled = false; });
-  });
-  filter.addEventListener('change', loadPayouts);
-
-  // ---------- accounts ----------
-  var acctList = document.getElementById('acctList');
-  var acctMsg = document.getElementById('acctMsg');
-  var acctSearch = document.getElementById('acctSearch');
-  var acctFilter = document.getElementById('acctFilter');
-  var acctCache = {};
-  function day(iso){ return (iso || '').slice(0, 10); }
-  function loadAccounts(){
-    acctMsg.textContent = 'Loading…'; acctList.innerHTML = '';
-    api('/api/admin/accounts?q=' + encodeURIComponent(acctSearch.value.trim()) + '&filter=' + encodeURIComponent(acctFilter.value)).then(function(r){
-      if (!r.ok){ acctMsg.textContent = (r.d && r.d.error) || 'Could not load accounts.'; return; }
-      var items = r.d.accounts || [];
-      acctCache = {};
-      items.forEach(function(a){ acctCache[a.id] = a; });
-      acctMsg.textContent = items.length ? 'Showing ' + items.length + ' account' + (items.length === 1 ? '' : 's') + '.' : 'No accounts match that.';
-      acctList.innerHTML = items.map(function(a){
-        var name = esc(a.discord_username || a.username);
-        var badges = (a.disabled ? '<span class="acct-badge bad">Blocked</span>' : '') +
-                     (a.discordLinked ? '' : '<span class="acct-badge">No Discord</span>');
-        var grantHtml = a.discordLinked
-          ? '<div class="acct-grant"><input type="number" min="0.01" step="0.01" placeholder="Amount $" aria-label="Amount in dollars">' +
-            '<input type="text" maxlength="200" placeholder="Note they will see (optional)" aria-label="Note">' +
-            '<button class="btn btn-primary" type="button" data-act="grant" data-sign="1" data-id="' + a.id + '">Add money</button>' +
-            '<button class="btn btn-ghost" type="button" data-act="grant" data-sign="-1" data-id="' + a.id + '">Remove</button></div>'
-          : '<p class="acct-note">Money can be added once Discord is linked.</p>';
-        return '<div class="acct-card" id="acct-' + a.id + '"><div class="acct-top"><b>' + name + '</b>' + badges + '<span>' + esc(a.email) + '</span>' +
-          (a.code ? '<span>code: ' + esc(a.code) + '</span>' : '') + '<span>joined ' + esc(day(a.created_at)) + '</span></div>' +
-          '<div class="acct-stats"><span>Available <b>' + money(a.available) + '</b></span><span>Pending <b>' + money(a.pending) + '</b></span><span>Earned <b>' + money(a.earned) + '</b></span></div>' +
-          grantHtml +
-          '<div class="acct-actions">' +
-            '<button type="button" class="acct-act" data-act="details" data-id="' + a.id + '">Details</button>' +
-            '<button type="button" class="acct-act" data-act="reset-pw" data-id="' + a.id + '">Send password reset</button>' +
-            (a.discordLinked ? '<button type="button" class="acct-act" data-act="reset-aff" data-id="' + a.id + '">Reset affiliate data</button>' : '') +
-            '<button type="button" class="acct-act" data-act="block" data-id="' + a.id + '">' + (a.disabled ? 'Unblock' : 'Block') + '</button>' +
-            '<button type="button" class="acct-act danger" data-act="delete" data-id="' + a.id + '">Delete account</button>' +
-          '</div><div class="acct-details" hidden></div></div>';
-      }).join('');
-    }).catch(function(){ acctMsg.textContent = 'Could not reach the server.'; });
-  }
-  function post(path, body){ return api(path, { method: 'POST', body: JSON.stringify(body || {}) }); }
-  function done(r, okText){
-    if (!r.ok){ window.alert((r.d && r.d.error) || 'That didn’t work.'); return false; }
-    if (okText) window.alert(okText);
-    loadAccounts(); loadOverview(); loadPayouts(); loadSales();
-    return true;
-  }
-  function showDetails(id, box){
-    if (!box.hidden){ box.hidden = true; return; }
-    box.hidden = false; box.innerHTML = '<p class="acct-note">Loading…</p>';
-    api('/api/admin/accounts/' + id).then(function(r){
-      if (!r.ok){ box.innerHTML = '<p class="acct-note">' + esc((r.d && r.d.error) || 'Could not load details.') + '</p>'; return; }
-      var d = r.d;
-      var owned = d.owned ? (d.owned.length ? d.owned.map(esc).join(', ') : 'Nothing') : esc(d.rolesError || (d.discordLinked ? 'Unknown' : 'No Discord linked'));
-      var rows = [['Discord', d.discordLinked ? esc(d.discordUsername || 'linked') : 'Not linked'], ['Owns', owned],
-                  ['Joined', esc(day(d.createdAt))], ['Referral clicks', d.clicks || 0], ['Referred sales', d.salesCount || 0]];
-      var hist = (d.history || []).map(function(h){
-        var what = h.kind === 'credit' ? 'Discount code ' + esc(h.code || '') : h.kind === 'payout' ? 'Payout (' + esc(h.method) + ')'
-                 : h.kind === 'grant' ? 'Added by admin' + (h.note ? ': ' + esc(h.note) : '') : 'Removed by admin' + (h.note ? ': ' + esc(h.note) : '');
-        return '<tr><td>' + esc(day(h.createdAt)) + '</td><td>' + what + '</td><td>' + money(h.amount) + '</td><td>' + esc(h.status) + '</td></tr>';
-      }).join('');
-      var sales = (d.sales || []).map(function(x){ return '<tr><td>' + esc(day(x.createdAt)) + '</td><td>Referred sale</td><td>' + money(x.amount) + '</td><td>+' + money(x.commission) + '</td></tr>'; }).join('');
-      box.innerHTML = '<dl class="payout-details">' + rows.map(function(rw){ return '<dt>' + rw[0] + '</dt><dd>' + rw[1] + '</dd>'; }).join('') + '</dl>' +
-        ((hist || sales) ? '<div class="table-wrap"><table class="admin-table"><thead><tr><th>Date</th><th>What</th><th>Amount</th><th>Status</th></tr></thead><tbody>' + hist + sales + '</tbody></table></div>'
-                         : '<p class="acct-note">No affiliate activity yet.</p>');
-    }).catch(function(){ box.innerHTML = '<p class="acct-note">Could not reach the server.</p>'; });
-  }
-  acctList.addEventListener('click', function(e){
-    var btn = e.target.closest('button[data-act]');
-    if (!btn) return;
-    var id = btn.getAttribute('data-id'), act = btn.getAttribute('data-act'), a = acctCache[id] || {};
-    var label = (a.discord_username || a.username || a.email || 'this account');
-    if (act === 'details'){ showDetails(id, document.querySelector('#acct-' + id + ' .acct-details')); return; }
-    if (act === 'grant'){
-      var box = btn.parentNode, sign = Number(btn.getAttribute('data-sign'));
-      var amount = parseFloat(box.querySelector('input[type=number]').value), note = box.querySelector('input[type=text]').value.trim();
-      if (!(amount > 0)){ window.alert('Enter an amount, like 5 or 2.50.'); return; }
-      if (!window.confirm((sign > 0 ? 'Add ' + money(amount) + ' to ' : 'Remove ' + money(amount) + ' from ') + label + '?')) return;
-      btn.disabled = true;
-      post('/api/admin/accounts/' + id + '/grant', { amount: sign * amount, note: note }).then(function(r){ if (!done(r)) btn.disabled = false; });
-      return;
-    }
-    if (act === 'reset-pw'){
-      if (!window.confirm('Email a password reset link to ' + a.email + '?')) return;
-      btn.disabled = true;
-      post('/api/admin/accounts/' + id + '/send-reset').then(function(r){ btn.disabled = false; done(r, 'Reset link sent to ' + a.email + '.'); });
-      return;
-    }
-    if (act === 'reset-aff'){
-      if (!window.confirm('Reset ALL affiliate data for ' + label + '?\n\nTheir balance, history and referred sales are wiped, and unused discount codes stop working. This can’t be undone.')) return;
-      btn.disabled = true;
-      post('/api/admin/accounts/' + id + '/reset-affiliate').then(function(r){ btn.disabled = false; done(r, r.ok ? 'Affiliate data reset.' + (r.d.codesDisabled ? ' ' + r.d.codesDisabled + ' discount code(s) turned off.' : '') : null); });
-      return;
-    }
-    if (act === 'block'){
-      var blocking = !a.disabled;
-      if (!window.confirm((blocking ? 'Block ' : 'Unblock ') + label + '?' + (blocking ? '\n\nThey are signed out and can’t log in until you unblock them.' : ''))) return;
-      btn.disabled = true;
-      post('/api/admin/accounts/' + id + '/block', { blocked: blocking }).then(function(r){ btn.disabled = false; done(r); });
-      return;
-    }
-    if (act === 'delete'){
-      var typed = window.prompt('This permanently deletes ' + label + ' and all its data.\n\nType the account’s email (' + a.email + ') to confirm:');
-      if (typed === null) return;
-      btn.disabled = true;
-      post('/api/admin/accounts/' + id + '/delete', { confirm: typed }).then(function(r){ btn.disabled = false; done(r, r.ok ? 'Account deleted.' : null); });
-    }
-  });
-  document.getElementById('acctSearchBtn').addEventListener('click', loadAccounts);
-  acctFilter.addEventListener('change', loadAccounts);
-  acctSearch.addEventListener('keydown', function(e){ if (e.key === 'Enter') loadAccounts(); });
-
-  // ---------- recent sales ----------
-  function loadSales(){
-    var body = document.getElementById('salesBody');
-    var sMsg = document.getElementById('salesMsg');
-    api('/api/admin/sales').then(function(r){
-      if (!r.ok){ sMsg.textContent = 'Could not load sales.'; return; }
-      var items = r.d.sales || [];
-      sMsg.textContent = items.length ? '' : 'No affiliate sales yet.';
-      body.innerHTML = items.map(function(x){
-        return '<tr><td>' + esc((x.createdAt || '').slice(0, 16).replace('T', ' ')) + '</td><td>' + esc(x.code) + '</td><td>' + money(x.amount) + '</td><td>' + money(x.commission) + '</td></tr>';
-      }).join('');
-    });
-  }
-
-  // ---------- access check: Discord admin role ----------
-  if (!discordToken){
-    if (!authError && !read('fixcoreAdminAutoTried')){
-      who.textContent = 'Checking your Discord…';
-      signInWithDiscord(true);
-      return;
-    }
-    discordGate(authError ? "Discord sign-in was cancelled or didn't finish. Try again." : 'Sign in with Discord to open the admin page.');
-    return;
-  }
-  api('/api/admin/me').then(function(r){
-    if (r.ok){
-      who.innerHTML = 'Signed in as <b>' + esc(r.d.name) + '</b> · <a href="#" id="adminSignOut" class="link-btn">Sign out</a>';
-      document.getElementById('adminSignOut').addEventListener('click', function(e){
-        e.preventDefault(); store('fixcoreAdminDiscordToken', null); window.location.reload();
-      });
-      gate.hidden = true; app.hidden = false;
-      loadOverview(); loadPayouts(); loadAccounts(); loadSales();
-      return;
-    }
-    var code = r.d && r.d.code;
-    if (r.status === 401){ store('fixcoreAdminDiscordToken', null); discordGate('Your Discord sign-in has expired. Sign in again.'); }
-    else if (code === 'role') showGate("Your Discord account doesn't have the admin role, so you can't open this page.", 'Back to FixCore', 'index.html');
-    else showGate((r.d && r.d.error) || 'Could not check your access right now. Try again in a minute.', 'Try again', 'admin.html');
-  }).catch(function(){
-    showGate('Could not reach the server. Try again in a minute.', 'Try again', 'admin.html');
-  });
-})();
-</script>
+<script src="assets/admin.js?v=1"></script>
 </body>
 </html>
