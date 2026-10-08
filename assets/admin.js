@@ -251,17 +251,39 @@
     });
   }
 
-  // ---------- system status ----------
-  function loadStatus(){
-    var box = document.getElementById('statusList');
-    box.innerHTML = '<p class="admin-msg">Checking…</p>';
-    api('/api/admin/status').then(function(r){
-      if (!r.ok){ box.innerHTML = '<p class="admin-msg">' + esc((r.d && r.d.error) || 'Could not check.') + '</p>'; return; }
-      box.innerHTML = (r.d.checks || []).map(function(c){
-        return '<div class="status-item' + (c.ok ? ' ok' : '') + '"><span class="status-dot"></span><div><b>' + esc(c.name) + '</b><small>' + esc(c.detail) + '</small></div></div>';
-      }).join('');
-    }).catch(function(){ box.innerHTML = '<p class="admin-msg">Could not reach the server.</p>'; });
+  // ---------- system status (checks itself every 5 seconds while the tab is open) ----------
+  var STATUS_EVERY_MS = 5000;
+  var statusBusy = false, statusTimer = null, baseTitle = document.title;
+  function statusCard(name, ok, detail){
+    return '<div class="status-item' + (ok ? ' ok' : '') + '"><span class="status-dot"></span><div><b>' + esc(name) + '</b><small>' + esc(detail) + '</small></div></div>';
   }
+  function showStatus(checks, note){
+    var bad = checks.filter(function(c){ return !c.ok; }).length;
+    document.getElementById('statusList').innerHTML = checks.map(function(c){ return statusCard(c.name, c.ok, c.detail); }).join('');
+    var t = new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    var sum = document.getElementById('statusSummary');
+    sum.textContent = (bad ? bad + ' problem' + (bad === 1 ? '' : 's') : 'Everything is working') + ' · checked ' + t + (note ? ' · ' + note : '');
+    sum.className = 'status-summary' + (bad ? ' bad' : '');
+    document.title = bad ? '(' + bad + ' down) ' + baseTitle : baseTitle;
+  }
+  function loadStatus(){
+    if (statusBusy) return;   // the last check hasn't answered yet
+    statusBusy = true;
+    api('/api/admin/status').then(function(r){
+      statusBusy = false;
+      if (!r.ok){ showStatus([{ name: 'Accounts backend', ok: false, detail: (r.d && r.d.error) || ('Answered ' + r.status) }]); return; }
+      showStatus(r.d.checks || []);
+    }).catch(function(){
+      statusBusy = false;
+      showStatus([{ name: 'Accounts backend', ok: false, detail: 'Not answering. Railway may be down or redeploying.' }]);
+    });
+  }
+  function startStatus(){
+    loadStatus();
+    clearInterval(statusTimer);
+    statusTimer = setInterval(function(){ if (!document.hidden) loadStatus(); }, STATUS_EVERY_MS);
+  }
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) loadStatus(); });
   document.getElementById('statusBtn').addEventListener('click', loadStatus);
 
   // ---------- orders ----------
@@ -380,7 +402,7 @@
       });
       gate.hidden = true; app.hidden = false;
       loadOverview(); loadPayouts(); loadAccounts(); loadSales();
-      loadStatus(); loadOrders(); loadPromos(); loadNewsletterCounts();
+      startStatus(); loadOrders(); loadPromos(); loadNewsletterCounts();
       return;
     }
     var code = r.d && r.d.code;

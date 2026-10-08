@@ -15,6 +15,9 @@
 <link rel="stylesheet" href="assets/fixcore.css?v=23">
 <style>
 .btn-sm{height:34px;padding:0 14px;font-size:13px;}
+.status-summary{margin:-6px 0 14px;font-size:13.5px;color:var(--ok);}
+.status-summary.bad{color:var(--danger);font-weight:600;}
+.status-item:not(.ok){border-color:rgba(255,107,129,.55);background:rgba(255,107,129,.07);}
 .status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
 .status-item{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--bg-2);}
 .status-dot{width:10px;height:10px;border-radius:50%;margin-top:5px;flex-shrink:0;background:var(--danger);box-shadow:0 0 0 3px rgba(255,107,129,.15);}
@@ -62,7 +65,8 @@
           <h2>System status</h2>
           <button class="btn btn-ghost btn-sm" id="statusBtn" type="button">Check again</button>
         </div>
-        <div class="status-grid" id="statusList"><p class="admin-msg">Checking…</p></div>
+        <p class="status-summary" id="statusSummary">Checking…</p>
+        <div class="status-grid" id="statusList"></div>
       </section>
 
       <section class="admin-block">
@@ -139,6 +143,6 @@
     </div>
   </div>
 </main>
-<script src="assets/admin.js?v=1"></script>
+<script src="assets/admin.js?v=2"></script>
 </body>
 </html>
