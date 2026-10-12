@@ -259,7 +259,14 @@
         <h2>Discord alerts</h2>
         <p id="alertInfo">Posts to a private Discord channel when something happens.</p>
         <div id="alertList" class="feat-list"></div>
-        <div class="admin-bar"><button class="btn btn-ghost" id="alertTest" type="button">Send test alert</button></div>
+        <div class="admin-bar">
+          <div class="field"><label for="alertPing">Ping on important alerts <span class="opt">(role or user ID — when something goes down or the site is shut down)</span></label><input type="text" id="alertPing" inputmode="numeric" maxlength="21" placeholder="1546540329413382204"></div>
+          <button class="btn btn-ghost" id="alertPingSave" type="button">Save</button>
+        </div>
+        <div class="admin-bar">
+          <button class="btn btn-ghost" id="alertTest" type="button">Send test alert</button>
+          <button class="btn btn-ghost" id="alertTestPing" type="button">Send test with ping</button>
+        </div>
         <p class="admin-msg" id="alertMsg"></p>
       </section>
 
@@ -271,6 +278,6 @@
     </div>
   </div>
 </main>
-<script src="assets/admin.js?v=5"></script>
+<script src="assets/admin.js?v=6"></script>
 </body>
 </html>

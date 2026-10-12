@@ -367,6 +367,8 @@
         '" role="switch" aria-checked="' + on + '" aria-label="' + esc(alertLabels[k]) + '" data-alert="' + esc(k) + '"></button></div>';
     }).join('');
     document.getElementById('alertTest').disabled = !d.configured;
+    document.getElementById('alertTestPing').disabled = !d.configured || !d.ping;
+    if (document.activeElement !== document.getElementById('alertPing')) document.getElementById('alertPing').value = d.ping || '';
   }
   function loadAlerts(){ api('/api/admin/alerts').then(function(r){ if (r.ok) drawAlerts(r.d); }); }
   document.getElementById('alertList').addEventListener('click', function(e){
@@ -380,11 +382,21 @@
       if (r.ok) drawAlerts(r.d);
     });
   });
-  document.getElementById('alertTest').addEventListener('click', function(){
+  function testAlert(ping){
     var m = document.getElementById('alertMsg');
     m.textContent = 'Sending…';
-    post('/api/admin/alerts', { test: true }).then(function(r){
-      m.textContent = r.ok ? 'Sent. Check your Discord channel.' : ((r.d && r.d.error) || 'Could not send.');
+    post('/api/admin/alerts', { test: true, ping: ping }).then(function(r){
+      m.textContent = r.ok ? 'Sent' + (ping ? ' with a ping' : '') + '. Check your Discord channel.' : ((r.d && r.d.error) || 'Could not send.');
+    });
+  }
+  document.getElementById('alertTest').addEventListener('click', function(){ testAlert(false); });
+  document.getElementById('alertTestPing').addEventListener('click', function(){ testAlert(true); });
+  document.getElementById('alertPingSave').addEventListener('click', function(){
+    var m = document.getElementById('alertMsg'), v = document.getElementById('alertPing').value.trim();
+    post('/api/admin/alerts', { ping: v }).then(function(r){
+      if (!r.ok){ m.textContent = (r.d && r.d.error) || 'Could not save.'; return; }
+      drawAlerts(r.d);
+      m.textContent = v ? 'Saved. Important alerts will ping that role or person.' : 'Saved. Important alerts won\u2019t ping anyone.';
     });
   });
 
