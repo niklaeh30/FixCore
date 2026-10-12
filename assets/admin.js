@@ -251,6 +251,57 @@
     });
   }
 
+  // ---------- emergency shutdown ----------
+  function sinceText(iso){
+    var t = new Date(iso).getTime();
+    if (isNaN(t)) return '';
+    var min = Math.max(0, Math.round((Date.now() - t) / 60000));
+    return new Date(t).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) +
+      ' (' + (min < 1 ? 'just now' : min < 60 ? min + ' min ago' : Math.round(min / 60) + ' h ago') + ')';
+  }
+  function showEmergency(d){
+    var block = document.getElementById('emgBlock');
+    block.classList.toggle('is-down', !!d.on);
+    document.getElementById('emgOff').hidden = !!d.on;
+    document.getElementById('emgOn').hidden = !d.on;
+    document.getElementById('emgState').textContent = d.on ? 'THE WEBSITE IS OFFLINE' : 'The website is open for customers.';
+    if (d.on){
+      document.getElementById('emgOnText').textContent = 'Shut down ' + sinceText(d.since) + (d.by ? ' by ' + d.by : '') + '.' +
+        (d.message ? ' Visitors see: \u201c' + d.message + '\u201d' : ' No message for visitors.');
+    }
+  }
+  function loadEmergency(){
+    api('/api/admin/emergency').then(function(r){
+      if (r.ok) showEmergency(r.d);
+      else document.getElementById('emgState').textContent = (r.d && r.d.error) || 'Could not check.';
+    }).catch(function(){ document.getElementById('emgState').textContent = 'Could not reach the server.'; });
+  }
+  document.getElementById('emgShut').addEventListener('click', function(){
+    var btn = this, m = document.getElementById('emgResult');
+    var typed = window.prompt('This takes fixcorepc.com offline for everyone right now.\n\nType SHUTDOWN to confirm.');
+    if (typed === null) return;
+    if (typed.trim().toUpperCase() !== 'SHUTDOWN'){ m.textContent = 'Not shut down. You have to type SHUTDOWN.'; return; }
+    btn.disabled = true; m.textContent = 'Shutting down…';
+    post('/api/admin/emergency', { on: true, message: document.getElementById('emgMsg').value.trim() }).then(function(r){
+      btn.disabled = false;
+      if (!r.ok){ m.textContent = (r.d && r.d.error) || 'Could not shut down.'; return; }
+      m.textContent = 'The website is offline. Visitors see the emergency screen within 30 seconds.';
+      loadEmergency(); loadStatus();
+    }).catch(function(){ btn.disabled = false; m.textContent = 'Could not reach the server.'; });
+  });
+  document.getElementById('emgOpen').addEventListener('click', function(){
+    var btn = this, m = document.getElementById('emgResult');
+    if (!window.confirm('Open the website for customers again?')) return;
+    btn.disabled = true; m.textContent = 'Opening…';
+    post('/api/admin/emergency', { on: false }).then(function(r){
+      btn.disabled = false;
+      if (!r.ok){ m.textContent = (r.d && r.d.error) || 'Could not open the website.'; return; }
+      document.getElementById('emgMsg').value = '';
+      m.textContent = 'The website is back online.';
+      loadEmergency(); loadStatus();
+    }).catch(function(){ btn.disabled = false; m.textContent = 'Could not reach the server.'; });
+  });
+
   // ---------- system status (checks itself every 5 seconds while the tab is open) ----------
   var STATUS_EVERY_MS = 5000;
   var statusBusy = false, statusTimer = null, baseTitle = document.title;
@@ -431,7 +482,7 @@
       });
       gate.hidden = true; app.hidden = false;
       loadOverview(); loadPayouts(); loadAccounts(); loadSales();
-      startStatus(); loadOrders(); loadPromos(); loadNewsletterCounts();
+      loadEmergency(); startStatus(); loadOrders(); loadPromos(); loadNewsletterCounts();
       return;
     }
     var code = r.d && r.d.code;

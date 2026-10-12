@@ -15,6 +15,21 @@
 <link rel="stylesheet" href="assets/fixcore.css?v=23">
 <style>
 .btn-sm{height:34px;padding:0 14px;font-size:13px;}
+.emg{border:1px solid rgba(255,59,92,.45);border-radius:var(--r-lg);padding:24px;background:linear-gradient(180deg,rgba(255,59,92,.09),rgba(255,59,92,.02));}
+.emg-head{display:flex;gap:14px;align-items:center;margin-bottom:14px;}
+.emg-head h2{margin:0 0 2px;color:#ff6b81;}
+.emg-head p{margin:0;font-size:14px;color:var(--text-2);}
+.emg-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,59,92,.15);color:#ff4d6a;flex-shrink:0;}
+.emg-icon svg{width:24px;height:24px;}
+.emg-desc{color:var(--text-2);font-size:14px;max-width:720px;margin-bottom:14px;}
+.emg-btn{height:50px;padding:0 26px;border:0;border-radius:12px;font:inherit;font-weight:700;font-size:15px;letter-spacing:.02em;color:#fff;cursor:pointer;background:linear-gradient(135deg,#ff3b5c,#b81d45);box-shadow:0 10px 30px -10px rgba(255,59,92,.7);}
+.emg-btn:hover{filter:brightness(1.08);}
+.emg-btn:disabled{opacity:.6;cursor:wait;}
+.emg-btn.emg-ok{background:linear-gradient(135deg,#21c27a,#13915a);box-shadow:0 10px 30px -10px rgba(33,194,122,.6);}
+.emg.is-down{border-color:#ff3b5c;background:linear-gradient(180deg,rgba(255,59,92,.22),rgba(255,59,92,.06));animation:emgGlow 2s ease-in-out infinite;}
+.emg.is-down .emg-head p{color:#ff8a9d;font-weight:600;}
+@keyframes emgGlow{50%{box-shadow:0 0 0 4px rgba(255,59,92,.18);}}
+@media (prefers-reduced-motion:reduce){.emg.is-down{animation:none;}}
 .status-summary{margin:-6px 0 14px;font-size:13.5px;color:var(--ok);}
 .status-summary.bad{color:var(--danger);font-weight:600;}
 .status-item:not(.ok){border-color:rgba(255,107,129,.55);background:rgba(255,107,129,.07);}
@@ -62,6 +77,26 @@
     </div>
 
     <div id="adminApp" hidden>
+      <section class="admin-block emg" id="emgBlock">
+        <div class="emg-head">
+          <span class="emg-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18.5A2 2 0 0 0 3.5 21.5h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+          <div>
+            <h2>Emergency shutdown</h2>
+            <p id="emgState">Checking…</p>
+          </div>
+        </div>
+        <div id="emgOff" hidden>
+          <p class="emg-desc">Takes the whole website offline right away. Every page shows a "something is wrong, we're on it" screen, and login, accounts and payouts stop. Stripe payments, this admin page and the ticket bot keep working.</p>
+          <div class="field"><label for="emgMsg">Message for visitors <span class="opt">(optional)</span></label><input type="text" id="emgMsg" maxlength="300" placeholder="We're fixing a problem with payments. Back within the hour."></div>
+          <button type="button" class="emg-btn" id="emgShut">Shut down website</button>
+        </div>
+        <div id="emgOn" hidden>
+          <p class="emg-desc" id="emgOnText"></p>
+          <button type="button" class="emg-btn emg-ok" id="emgOpen">Turn website back on</button>
+        </div>
+        <p class="admin-msg" id="emgResult"></p>
+      </section>
+
       <section class="admin-block">
         <h2>Overview</h2>
         <div class="admin-stats" id="adminStats"></div>
@@ -154,6 +189,6 @@
     </div>
   </div>
 </main>
-<script src="assets/admin.js?v=3"></script>
+<script src="assets/admin.js?v=4"></script>
 </body>
 </html>
