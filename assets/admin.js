@@ -368,7 +368,11 @@
     }).join('');
     document.getElementById('alertTest').disabled = !d.configured;
     document.getElementById('alertTestPing').disabled = !d.configured || !d.ping;
-    if (document.activeElement !== document.getElementById('alertPing')) document.getElementById('alertPing').value = d.ping || '';
+    if (document.activeElement !== document.getElementById('alertPing')){
+      var ping = d.ping || '', isUser = ping.indexOf('user:') === 0;
+      document.getElementById('alertPing').value = isUser ? ping.slice(5) : ping;
+      document.getElementById('alertPingType').value = isUser ? 'user' : 'role';
+    }
   }
   function loadAlerts(){ api('/api/admin/alerts').then(function(r){ if (r.ok) drawAlerts(r.d); }); }
   document.getElementById('alertList').addEventListener('click', function(e){
@@ -393,7 +397,7 @@
   document.getElementById('alertTestPing').addEventListener('click', function(){ testAlert(true); });
   document.getElementById('alertPingSave').addEventListener('click', function(){
     var m = document.getElementById('alertMsg'), v = document.getElementById('alertPing').value.trim();
-    post('/api/admin/alerts', { ping: v }).then(function(r){
+    post('/api/admin/alerts', { ping: v, pingType: document.getElementById('alertPingType').value }).then(function(r){
       if (!r.ok){ m.textContent = (r.d && r.d.error) || 'Could not save.'; return; }
       drawAlerts(r.d);
       m.textContent = v ? 'Saved. Important alerts will ping that role or person.' : 'Saved. Important alerts won\u2019t ping anyone.';
