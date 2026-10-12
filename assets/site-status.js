@@ -39,7 +39,24 @@
     '.fcd-ghost{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.03);color:#e6e7f5;}' +
     '.fcd-ghost:hover{border-color:rgba(255,255,255,.3);}' +
     '.fcd-meta{color:#7d7f9c;font-size:13px;}' +
-    '@media (prefers-reduced-motion:reduce){.fcd-dot{animation:none;}.fcd-btn{transition:none;}}';
+    '@media (prefers-reduced-motion:reduce){.fcd-dot{animation:none;}.fcd-btn{transition:none;}}' +
+    /* announcement banner */
+    '#fc-banner{position:fixed;left:50%;bottom:18px;transform:translate(-50%,24px);opacity:0;z-index:2147483000;display:flex;align-items:center;gap:14px;' +
+      'max-width:min(760px,calc(100% - 24px));width:max-content;padding:11px 12px 11px 18px;border-radius:14px;color:#fff;font-family:var(--font-body,system-ui,sans-serif);font-size:14.5px;line-height:1.4;' +
+      'box-shadow:0 18px 40px -12px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px);transition:transform .35s ease,opacity .35s ease;}' +
+    '#fc-banner.show{transform:translate(-50%,0);opacity:1;}' +
+    '#fc-banner.info{background:linear-gradient(135deg,rgba(0,150,220,.92),rgba(70,90,240,.92));}' +
+    '#fc-banner.sale{background:linear-gradient(135deg,rgba(168,85,247,.94),rgba(236,72,153,.94));}' +
+    '#fc-banner.warning{background:linear-gradient(135deg,rgba(245,158,11,.95),rgba(234,88,12,.95));}' +
+    '#fc-banner .fcb-text{flex:1;min-width:0;}' +
+    '#fc-banner a.fcb-link{flex-shrink:0;color:#111;background:#fff;border-radius:9px;padding:7px 13px;font-weight:700;font-size:13.5px;text-decoration:none;white-space:nowrap;}' +
+    '#fc-banner a.fcb-link:hover{background:#f1f1f6;}' +
+    '#fc-banner button.fcb-x{flex-shrink:0;width:30px;height:30px;border:0;border-radius:8px;background:rgba(255,255,255,.16);color:#fff;font-size:18px;line-height:1;cursor:pointer;}' +
+    '#fc-banner button.fcb-x:hover{background:rgba(255,255,255,.28);}' +
+    '@media (max-width:560px){#fc-banner{width:calc(100% - 20px);bottom:10px;font-size:13.5px;gap:10px;}}' +
+    '@media (prefers-reduced-motion:reduce){#fc-banner{transition:none;}}' +
+    /* products that are switched off */
+    '.fc-closed{opacity:.55 !important;cursor:not-allowed !important;filter:grayscale(.6);}';
 
   function addStyle(){
     if (document.getElementById('fc-down-style')) return;
@@ -100,14 +117,67 @@
     window.location.reload();   // the site is back: show the real page
   }
 
+  // ---------- announcement banner ----------
+  var BANNER_HIDE_KEY = 'fixcoreBannerHidden';
+  function showBanner(b){
+    var old = document.getElementById('fc-banner');
+    if (!b || !b.text){ if (old) old.remove(); return; }
+    try { if (localStorage.getItem(BANNER_HIDE_KEY) === b.id){ if (old) old.remove(); return; } } catch (e) { /* ignore */ }
+    if (old && old.getAttribute('data-id') === b.id) return;
+    if (old) old.remove();
+    if (!document.body){ document.addEventListener('DOMContentLoaded', function(){ showBanner(b); }); return; }
+    addStyle();
+    var bar = document.createElement('div');
+    bar.id = 'fc-banner';
+    bar.className = b.style || 'info';
+    bar.setAttribute('role', 'status');
+    bar.setAttribute('data-id', b.id);
+    var text = document.createElement('span'); text.className = 'fcb-text'; text.textContent = b.text; bar.appendChild(text);
+    if (b.link){
+      var a = document.createElement('a'); a.className = 'fcb-link'; a.href = b.link; a.textContent = b.linkText || 'Learn more';
+      if (/^https:\/\//.test(b.link) && b.link.indexOf('fixcorepc.com') === -1){ a.target = '_blank'; a.rel = 'noopener'; }
+      bar.appendChild(a);
+    }
+    var x = document.createElement('button'); x.type = 'button'; x.className = 'fcb-x'; x.setAttribute('aria-label', 'Hide this message'); x.textContent = '\u00d7';
+    x.addEventListener('click', function(){
+      try { localStorage.setItem(BANNER_HIDE_KEY, b.id); } catch (e) { /* ignore */ }
+      bar.classList.remove('show'); setTimeout(function(){ bar.remove(); }, 400);
+    });
+    bar.appendChild(x);
+    document.body.appendChild(bar);
+    setTimeout(function(){ bar.classList.add('show'); }, 60);
+  }
+
+  // ---------- products switched off on the admin page ----------
+  function closeLinks(urls){
+    if (!urls || !urls.length) return;
+    var apply = function(){
+      [].forEach.call(document.querySelectorAll('[data-stripe-url], a[href^="https://buy.stripe.com/"]'), function(el){
+        var url = el.getAttribute('data-stripe-url') || el.getAttribute('href');
+        if (urls.indexOf(url) === -1 || el.classList.contains('fc-closed')) return;
+        el.classList.add('fc-closed');
+        el.setAttribute('aria-disabled', 'true');
+        if ('disabled' in el) el.disabled = true;
+        el.textContent = 'Not available right now';
+        el.addEventListener('click', function(e){ e.preventDefault(); e.stopImmediatePropagation(); }, true);
+      });
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply); else apply();
+  }
+
+  var firstCheck = true;
   function check(done){
     var ctrl = window.AbortController ? new AbortController() : null;
     var t = setTimeout(function(){ if (ctrl) ctrl.abort(); }, 5000);
-    fetch(API, { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined })
+    var url = API + (firstCheck ? '?v=1' : '');   // ?v=1 counts one page view for the stats
+    firstCheck = false;
+    fetch(url, { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined })
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){
         clearTimeout(t);
         if (!d) return;   // server problem: keep whatever is showing
+        showBanner(d.banner);
+        closeLinks(d.closedLinks);
         if (d.emergency){
           try { localStorage.setItem(CACHE_KEY, JSON.stringify({ message: d.message, since: d.since })); } catch (e) { /* ignore */ }
           render(d);

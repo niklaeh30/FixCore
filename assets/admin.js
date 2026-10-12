@@ -165,7 +165,7 @@
       var rows = [['Discord', d.discordLinked ? esc(d.discordUsername || 'linked') : 'Not linked'], ['Owns', owned],
                   ['Email verified', yn(d.emailVerified)], ['Two-step login', d.twoFactor ? 'On' : 'Off'], ['Email updates', esc(notif)],
                   ['Joined', esc(day(d.createdAt))], ['Referral clicks', d.clicks || 0], ['Referred sales', d.salesCount || 0],
-                  ['Last logins', logins], ['Orders', orders]];
+                  ['Last logins', logins], ['Orders', orders], ['Give / remove', productButtons(d)]];
       var extra = '<div class="acct-actions">' +
         (d.twoFactor ? '<button type="button" class="acct-act" data-act="twofa-off" data-id="' + d.id + '">Turn off two-step login</button>' : '') +
         '<button type="button" class="acct-act" data-act="logout-all" data-id="' + d.id + '">Log out everywhere</button></div>';
@@ -177,7 +177,9 @@
       var sales = (d.sales || []).map(function(x){ return '<tr><td>' + esc(day(x.createdAt)) + '</td><td>Referred sale</td><td>' + money(x.amount) + '</td><td>+' + money(x.commission) + '</td></tr>'; }).join('');
       box.innerHTML = extra + '<dl class="payout-details">' + rows.map(function(rw){ return '<dt>' + rw[0] + '</dt><dd>' + rw[1] + '</dd>'; }).join('') + '</dl>' +
         ((hist || sales) ? '<div class="table-wrap"><table class="admin-table"><thead><tr><th>Date</th><th>What</th><th>Amount</th><th>Status</th></tr></thead><tbody>' + hist + sales + '</tbody></table></div>'
-                         : '<p class="acct-note">No affiliate activity yet.</p>');
+                         : '<p class="acct-note">No affiliate activity yet.</p>') +
+        '<div class="notes"><p class="acct-note">Loading notes…</p></div>';
+      loadNotes(d.id);
     }).catch(function(){ box.innerHTML = '<p class="acct-note">Could not reach the server.</p>'; });
   }
   acctList.addEventListener('click', function(e){
@@ -250,6 +252,200 @@
       }).join('');
     });
   }
+
+  // ---------- website switches ----------
+  function drawFeatures(list){
+    document.getElementById('featList').innerHTML = list.map(function(f){
+      return '<div class="feat' + (f.on ? '' : ' off') + '"><span>' + esc(f.label) + (f.on ? '' : ' \u2014 OFF') + '</span>' +
+        '<button type="button" class="sw' + (f.on ? ' on' : '') + '" role="switch" aria-checked="' + f.on + '" aria-label="' + esc(f.label) + '" data-feat="' + esc(f.key) + '"></button></div>';
+    }).join('');
+  }
+  function loadFeatures(){
+    api('/api/admin/features').then(function(r){
+      if (r.ok) drawFeatures(r.d.features);
+      else document.getElementById('featMsg').textContent = (r.d && r.d.error) || 'Could not load.';
+    });
+  }
+  document.getElementById('featList').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-feat]');
+    if (!b) return;
+    var turnOn = !b.classList.contains('on'), m = document.getElementById('featMsg');
+    var label = b.getAttribute('aria-label');
+    if (!turnOn && !window.confirm('Turn OFF: ' + label + '?')) return;
+    b.disabled = true; m.textContent = 'Saving…';
+    post('/api/admin/features', { key: b.getAttribute('data-feat'), on: turnOn }).then(function(r){
+      if (!r.ok){ b.disabled = false; m.textContent = (r.d && r.d.error) || 'Could not change it.'; return; }
+      drawFeatures(r.d.features);
+      m.textContent = label + ' is now ' + (turnOn ? 'ON' : 'OFF') + '.' + (r.d.note ? ' ' + r.d.note : '');
+    }).catch(function(){ b.disabled = false; m.textContent = 'Could not reach the server.'; });
+  });
+
+  // ---------- announcement banner ----------
+  function banPreview(){
+    var t = document.getElementById('banText').value.trim(), p = document.getElementById('banPreview');
+    p.hidden = !t;
+    p.className = 'ban-preview ' + document.getElementById('banStyle').value;
+    p.textContent = t;
+    var lt = document.getElementById('banLinkText').value.trim();
+    if (t && document.getElementById('banLink').value.trim()){ var b = document.createElement('b'); b.textContent = lt || 'Learn more'; p.appendChild(b); }
+  }
+  ['banText', 'banLink', 'banLinkText', 'banStyle'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', banPreview);
+    document.getElementById(id).addEventListener('change', banPreview);
+  });
+  function showBannerState(b){
+    document.getElementById('banOff').hidden = !b.on;
+    document.getElementById('banSave').textContent = b.on ? 'Update banner' : 'Show banner';
+    if (b.on){
+      document.getElementById('banText').value = b.text || '';
+      document.getElementById('banLink').value = b.link || '';
+      document.getElementById('banLinkText').value = b.linkText || '';
+      document.getElementById('banStyle').value = b.style || 'info';
+    }
+    document.getElementById('banMsg').textContent = b.on ? 'The banner is showing on the website.' : 'No banner is showing.';
+    banPreview();
+  }
+  function loadBanner(){ api('/api/admin/banner').then(function(r){ if (r.ok) showBannerState(r.d); }); }
+  function saveBanner(on){
+    var m = document.getElementById('banMsg');
+    m.textContent = 'Saving…';
+    post('/api/admin/banner', {
+      on: on, text: document.getElementById('banText').value, link: document.getElementById('banLink').value,
+      linkText: document.getElementById('banLinkText').value, style: document.getElementById('banStyle').value
+    }).then(function(r){
+      if (!r.ok){ m.textContent = (r.d && r.d.error) || 'Could not save.'; return; }
+      showBannerState(r.d);
+      m.textContent = on ? 'Saved. Visitors see it within 30 seconds.' : 'Banner hidden.';
+    }).catch(function(){ m.textContent = 'Could not reach the server.'; });
+  }
+  document.getElementById('banSave').addEventListener('click', function(){ saveBanner(true); });
+  document.getElementById('banOff').addEventListener('click', function(){ saveBanner(false); });
+
+  // ---------- statistics (simple SVG charts, no libraries) ----------
+  function chart(title, rows, key, opts){
+    opts = opts || {};
+    var vals = rows.map(function(r){ return r[key] || 0; });
+    var max = Math.max.apply(null, vals.concat([1]));
+    var total = vals.reduce(function(a, b){ return a + b; }, 0);
+    var w = 600, h = 130, n = vals.length, gap = n > 60 ? 1 : 2, bw = (w - gap * (n - 1)) / n;
+    var bars = vals.map(function(v, i){
+      var bh = v ? Math.max(2, (v / max) * (h - 6)) : 0;
+      return '<rect x="' + (i * (bw + gap)).toFixed(1) + '" y="' + (h - bh).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) +
+        '" rx="2" fill="' + (opts.color || 'var(--cyan)') + '"><title>' + esc(rows[i].day) + ': ' + (opts.money ? '$' + v.toFixed(2) : v) + '</title></rect>';
+    }).join('');
+    var first = rows[0] ? rows[0].day.slice(5) : '', last = rows.length ? rows[rows.length - 1].day.slice(5) : '';
+    return '<div class="chart"><h3>' + esc(title) + '<small>' + (opts.money ? '$' + total.toFixed(2) : total) + ' total</small></h3>' +
+      '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" role="img" aria-label="' + esc(title) + '">' +
+      '<line x1="0" y1="' + h + '" x2="' + w + '" y2="' + h + '" stroke="var(--line-2)"/>' + bars + '</svg>' +
+      '<div class="axis"><span>' + esc(first) + '</span><span>max ' + (opts.money ? '$' + max.toFixed(2) : max) + '/day</span><span>' + esc(last) + '</span></div></div>';
+  }
+  function loadStats(){
+    var days = document.getElementById('statDays').value;
+    api('/api/admin/stats?days=' + days).then(function(r){
+      if (!r.ok){ document.getElementById('statCharts').innerHTML = '<p class="admin-msg">' + esc((r.d && r.d.error) || 'Could not load.') + '</p>'; return; }
+      var t = r.d.totals, rows = r.d.days;
+      document.getElementById('statTotals').innerHTML = [
+        ['Visitors', t.visitors], ['Page views', t.views], ['New accounts', t.accounts], ['Orders', t.orders], ['Revenue', '$' + Number(t.revenue).toFixed(2)]
+      ].map(function(x){ return '<div class="stat-total"><b>' + esc(x[1]) + '</b><small>' + esc(x[0]) + '</small></div>'; }).join('');
+      document.getElementById('statCharts').innerHTML =
+        chart('Visitors', rows, 'visitors') + chart('Revenue', rows, 'revenue', { money: true, color: '#a855f7' }) +
+        chart('Orders', rows, 'orders', { color: '#21c27a' }) + chart('New accounts', rows, 'accounts', { color: '#f59e0b' });
+    }).catch(function(){ document.getElementById('statCharts').innerHTML = '<p class="admin-msg">Could not reach the server.</p>'; });
+  }
+  document.getElementById('statDays').addEventListener('change', loadStats);
+
+  // ---------- Discord alerts ----------
+  var alertLabels = {};
+  function drawAlerts(d){
+    alertLabels = d.labels || {};
+    document.getElementById('alertInfo').textContent = d.configured
+      ? 'Posts to your private Discord channel when something happens. Choose what to get:'
+      : 'Not set up yet. In Discord: channel settings \u2192 Integrations \u2192 Webhooks \u2192 New webhook \u2192 Copy URL. Add it on Railway (fixcore-accounts) as ADMIN_ALERT_WEBHOOK.';
+    document.getElementById('alertList').innerHTML = Object.keys(alertLabels).map(function(k){
+      var on = !!(d.settings || {})[k];
+      return '<div class="feat"><span>' + esc(alertLabels[k]) + '</span><button type="button" class="sw' + (on ? ' on' : '') +
+        '" role="switch" aria-checked="' + on + '" aria-label="' + esc(alertLabels[k]) + '" data-alert="' + esc(k) + '"></button></div>';
+    }).join('');
+    document.getElementById('alertTest').disabled = !d.configured;
+  }
+  function loadAlerts(){ api('/api/admin/alerts').then(function(r){ if (r.ok) drawAlerts(r.d); }); }
+  document.getElementById('alertList').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-alert]');
+    if (!b) return;
+    b.classList.toggle('on');
+    var body = {};
+    [].forEach.call(document.querySelectorAll('#alertList button[data-alert]'), function(x){ body[x.getAttribute('data-alert')] = x.classList.contains('on'); });
+    post('/api/admin/alerts', body).then(function(r){
+      document.getElementById('alertMsg').textContent = r.ok ? 'Saved.' : ((r.d && r.d.error) || 'Could not save.');
+      if (r.ok) drawAlerts(r.d);
+    });
+  });
+  document.getElementById('alertTest').addEventListener('click', function(){
+    var m = document.getElementById('alertMsg');
+    m.textContent = 'Sending…';
+    post('/api/admin/alerts', { test: true }).then(function(r){
+      m.textContent = r.ok ? 'Sent. Check your Discord channel.' : ((r.d && r.d.error) || 'Could not send.');
+    });
+  });
+
+  // ---------- account: products and notes ----------
+  var PRODUCTS = [['fixcore', 'FixCore 2.1'], ['nettboost', 'NettBoost'], ['ultimate', 'FixCore Ultimate'], ['freetweaks', 'Free Tweaks']];
+  function productButtons(d){
+    if (!d.discordLinked) return '<p class="acct-note">Link Discord to give or remove products.</p>';
+    var owned = d.owned || [];
+    return '<div class="prod-btns">' + PRODUCTS.map(function(p){
+      var has = owned.indexOf(p[1]) !== -1 || (p[0] === 'freetweaks' && owned.indexOf('FixCore Free Tweaks') !== -1);
+      return '<button type="button" class="acct-act' + (has ? ' danger' : '') + '" data-act="product" data-id="' + d.id + '" data-product="' + p[0] +
+        '" data-give="' + (has ? '0' : '1') + '" data-name="' + esc(p[1]) + '">' + (has ? 'Remove ' : 'Give ') + esc(p[1]) + '</button>';
+    }).join('') + '</div>';
+  }
+  function drawNotes(box, id, notes){
+    box.innerHTML = '<h4>Notes <small class="opt">(only admins see these here, but they are included if the customer downloads their data)</small></h4>' +
+      (notes.length ? notes.map(function(n){
+        return '<div class="note"><div>' + esc(n.text) + '<small>' + esc((n.author || 'admin') + ' \u00b7 ' + (n.at || '').slice(0, 16).replace('T', ' ')) +
+          '</small></div><button type="button" title="Delete note" data-note="' + n.id + '" data-acct="' + id + '">\u00d7</button></div>';
+      }).join('') : '<p class="acct-note">No notes yet.</p>') +
+      '<div class="note-add"><input type="text" maxlength="1000" placeholder="Add a note, like \u201cRefunded once before\u201d" data-note-input="' + id + '">' +
+      '<button type="button" class="acct-act" data-act="note-add" data-id="' + id + '">Add</button></div>';
+  }
+  function loadNotes(id){
+    var box = document.querySelector('#acct-' + id + ' .notes');
+    if (!box) return;
+    api('/api/admin/accounts/' + id + '/notes').then(function(r){ if (r.ok) drawNotes(box, id, r.d.notes); });
+  }
+  acctList.addEventListener('click', function(e){
+    var del = e.target.closest('button[data-note]');
+    if (del){
+      if (!window.confirm('Delete this note?')) return;
+      api('/api/admin/notes/' + del.getAttribute('data-note'), { method: 'DELETE' }).then(function(){ loadNotes(del.getAttribute('data-acct')); });
+      return;
+    }
+    var btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    var id = btn.getAttribute('data-id'), act = btn.getAttribute('data-act');
+    if (act === 'note-add'){
+      var input = document.querySelector('[data-note-input="' + id + '"]');
+      var text = input.value.trim();
+      if (!text) return;
+      btn.disabled = true;
+      post('/api/admin/accounts/' + id + '/notes', { text: text }).then(function(r){
+        btn.disabled = false;
+        if (!r.ok){ window.alert((r.d && r.d.error) || 'Could not save the note.'); return; }
+        drawNotes(document.querySelector('#acct-' + id + ' .notes'), id, r.d.notes);
+      });
+    }
+    if (act === 'product'){
+      var give = btn.getAttribute('data-give') === '1', name = btn.getAttribute('data-name');
+      if (!window.confirm((give ? 'Give ' : 'Remove ') + name + (give ? ' to' : ' from') + ' this account?\n\nThis changes their Discord role right away.')) return;
+      btn.disabled = true;
+      post('/api/admin/accounts/' + id + '/product', { product: btn.getAttribute('data-product'), give: give }).then(function(r){
+        btn.disabled = false;
+        if (!r.ok){ window.alert((r.d && r.d.error) || 'That didn\u2019t work.'); return; }
+        var box = document.querySelector('#acct-' + id + ' .acct-details');
+        box.hidden = true; showDetails(id, box);   // reload the details with the new roles
+      });
+    }
+  });
 
   // ---------- emergency shutdown ----------
   function sinceText(iso){
@@ -482,7 +678,7 @@
       });
       gate.hidden = true; app.hidden = false;
       loadOverview(); loadPayouts(); loadAccounts(); loadSales();
-      loadEmergency(); startStatus(); loadOrders(); loadPromos(); loadNewsletterCounts();
+      loadEmergency(); loadFeatures(); loadBanner(); loadStats(); loadAlerts(); startStatus(); loadOrders(); loadPromos(); loadNewsletterCounts();
       return;
     }
     var code = r.d && r.d.code;
