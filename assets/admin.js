@@ -467,12 +467,33 @@
   function drawAppCfg(d){
     if (document.activeElement !== document.getElementById('appMinVer')) document.getElementById('appMinVer').value = d.min_version || '';
     if (document.activeElement !== document.getElementById('appMinMsg')) document.getElementById('appMinMsg').value = d.message || '';
+    var group = null;
     document.getElementById('appFeatList').innerHTML = (d.features || []).map(function(f){
-      return '<div class="feat' + (f.on ? '' : ' off') + '"><span>' + esc(f.label) + (f.on ? '' : ' \u2014 OFF') + '</span>' +
+      var head = '';
+      if (f.group && f.group !== group){ group = f.group; head = '<div class="feat-group">' + esc(group) + '</div>'; }
+      return head + '<div class="feat' + (f.on ? '' : ' off') + '"><span>' + esc(f.label) + (f.on ? '' : ' \u2014 OFF') + '</span>' +
         '<button type="button" class="sw' + (f.on ? ' on' : '') + '" role="switch" aria-checked="' + f.on + '" aria-label="' + esc(f.label) + '" data-appfeat="' + esc(f.key) + '"></button></div>';
     }).join('');
   }
-  function loadAppCfg(){ api('/api/admin/app-config?app=ultimate').then(function(r){ if (r.ok) drawAppCfg(r.d); }); }
+  function loadAppCfg(){ api('/api/admin/app-config?app=ultimate').then(function(r){
+    if (!r.ok) return;
+    drawAppCfg(r.d);
+    if (document.activeElement !== document.getElementById('crashChan')) document.getElementById('crashChan').value = r.d.crash_channel || '';
+  }); }
+  function crashChan(body, okText){
+    var m = document.getElementById('crashChanMsg');
+    m.textContent = 'Working…';
+    post('/api/admin/crash-channel', body).then(function(r){
+      m.textContent = r.ok ? okText : ((r.d && r.d.error) || 'Could not save.');
+      if (r.ok) document.getElementById('crashChan').value = r.d.crash_channel || '';
+    });
+  }
+  document.getElementById('crashChanSave').addEventListener('click', function(){
+    crashChan({ channel: document.getElementById('crashChan').value.trim() }, 'Saved. Crash logs go to that channel.');
+  });
+  document.getElementById('crashChanTest').addEventListener('click', function(){
+    crashChan({ test: true }, 'Sent. Check the channel in Discord.');
+  });
   document.getElementById('appMinSave').addEventListener('click', function(){
     var m = document.getElementById('appMinMsgOut'), v = document.getElementById('appMinVer').value.trim();
     if (v && !window.confirm('Make everyone below ' + v + ' update before they can use FixCore?\n\nOnly do this when the ' + v + ' installer is already uploaded.')) return;
@@ -483,6 +504,18 @@
       m.textContent = v ? 'Saved. Everyone below ' + v + ' must update.' : 'Saved. No version is required.';
     });
   });
+  function appAll(on){
+    var m = document.getElementById('appFeatMsg');
+    if (!on && !window.confirm('Turn OFF every feature in every copy of FixCore Ultimate?')) return;
+    m.textContent = 'Saving…';
+    post('/api/admin/app-config', { app: 'ultimate', all: on }).then(function(r){
+      if (!r.ok){ m.textContent = (r.d && r.d.error) || 'Could not change them.'; return; }
+      drawAppCfg(r.d);
+      m.textContent = on ? 'Every feature is on again.' : 'Every feature is OFF for everyone.';
+    });
+  }
+  document.getElementById('appAllOn').addEventListener('click', function(){ appAll(true); });
+  document.getElementById('appAllOff').addEventListener('click', function(){ appAll(false); });
   document.getElementById('appFeatList').addEventListener('click', function(e){
     var b = e.target.closest('button[data-appfeat]');
     if (!b) return;
@@ -492,7 +525,7 @@
     post('/api/admin/app-config', { app: 'ultimate', feature: b.getAttribute('data-appfeat'), on: on }).then(function(r){
       if (!r.ok){ b.disabled = false; m.textContent = (r.d && r.d.error) || 'Could not change it.'; return; }
       drawAppCfg(r.d);
-      m.textContent = label + ' is ' + (on ? 'on' : 'OFF') + ' for everyone (within 10 minutes).';
+      m.textContent = label + ' is ' + (on ? 'on' : 'OFF') + ' for everyone (within about 20 seconds).';
     });
   });
 

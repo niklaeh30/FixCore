@@ -54,6 +54,7 @@
 .note-add{display:flex;gap:8px;margin-top:8px;}
 .note-add input{flex:1;height:40px;padding:0 12px;border-radius:var(--r-sm);border:1px solid var(--line-2);background:rgba(4,5,14,.6);color:var(--text);font:inherit;}
 .ctl-inner{margin:14px 0 0;}
+.feat-group{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);padding:14px 2px 4px;}
 .ctl-h{font-size:15px;margin:0 0 6px;}
 .emg{border:1px solid rgba(255,59,92,.45);border-radius:var(--r-lg);padding:24px;background:linear-gradient(180deg,rgba(255,59,92,.09),rgba(255,59,92,.02));}
 .emg-head{display:flex;gap:14px;align-items:center;margin-bottom:14px;}
@@ -165,7 +166,7 @@
 
       <section class="admin-block" id="appCtlBlock">
         <h2>FixCore Ultimate app</h2>
-        <p>Control every installed copy of the app. Changes reach them within 10 minutes (or when they start). App crashes are sent to your Discord alerts.</p>
+        <p>Control every installed copy of the app. Changes reach every open app within about 20 seconds. App crashes are sent to your Discord alerts.</p>
         <div class="ctl-grid ctl-inner">
           <div>
             <h3 class="ctl-h">Required version</h3>
@@ -176,10 +177,22 @@
             <div class="field"><label for="appMinMsg">Message <span class="opt">(optional)</span></label><input type="text" id="appMinMsg" maxlength="300" placeholder="This update fixes a bug with Game Booster."></div>
             <div class="admin-bar"><button class="btn btn-primary" id="appMinSave" type="button">Save</button></div>
             <p class="admin-msg" id="appMinMsgOut"></p>
+            <h3 class="ctl-h" style="margin-top:22px;">Crash logs channel</h3>
+            <p class="admin-msg">The Discord channel where app crashes are posted. The FixCore bot needs to be able to post there.</p>
+            <div class="admin-bar">
+              <div class="field"><label for="crashChan">Channel ID</label><input type="text" id="crashChan" inputmode="numeric" maxlength="21"></div>
+              <button class="btn btn-ghost" id="crashChanSave" type="button">Save</button>
+              <button class="btn btn-ghost" id="crashChanTest" type="button">Send test</button>
+            </div>
+            <p class="admin-msg" id="crashChanMsg"></p>
           </div>
           <div>
             <h3 class="ctl-h">Feature switches</h3>
             <p class="admin-msg">Turn a feature off everywhere if it causes problems. Users see "paused" instead.</p>
+            <div class="admin-bar">
+              <button class="btn btn-ghost btn-sm" id="appAllOn" type="button">Turn all on</button>
+              <button class="btn btn-ghost btn-sm" id="appAllOff" type="button">Turn all off</button>
+            </div>
             <div id="appFeatList" class="feat-list"><p class="admin-msg">Loading…</p></div>
             <p class="admin-msg" id="appFeatMsg"></p>
           </div>
@@ -304,6 +317,6 @@
     </div>
   </div>
 </main>
-<script src="assets/admin.js?v=8"></script>
+<script src="assets/admin.js?v=10"></script>
 </body>
 </html>
