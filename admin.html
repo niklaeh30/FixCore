@@ -53,6 +53,8 @@
 .note button:hover{color:var(--danger);}
 .note-add{display:flex;gap:8px;margin-top:8px;}
 .note-add input{flex:1;height:40px;padding:0 12px;border-radius:var(--r-sm);border:1px solid var(--line-2);background:rgba(4,5,14,.6);color:var(--text);font:inherit;}
+.ctl-inner{margin:14px 0 0;}
+.ctl-h{font-size:15px;margin:0 0 6px;}
 .emg{border:1px solid rgba(255,59,92,.45);border-radius:var(--r-lg);padding:24px;background:linear-gradient(180deg,rgba(255,59,92,.09),rgba(255,59,92,.02));}
 .emg-head{display:flex;gap:14px;align-items:center;margin-bottom:14px;}
 .emg-head h2{margin:0 0 2px;color:#ff6b81;}
@@ -160,6 +162,29 @@
           <p class="admin-msg" id="banMsg"></p>
         </section>
       </div>
+
+      <section class="admin-block" id="appCtlBlock">
+        <h2>FixCore Ultimate app</h2>
+        <p>Control every installed copy of the app. Changes reach them within 10 minutes (or when they start). App crashes are sent to your Discord alerts.</p>
+        <div class="ctl-grid ctl-inner">
+          <div>
+            <h3 class="ctl-h">Required version</h3>
+            <p class="admin-msg">Everyone below this version gets a screen that can't be closed until they update. Leave empty to turn it off. Upload the new installer first.</p>
+            <div class="admin-bar">
+              <div class="field"><label for="appMinVer">Minimum version</label><input type="text" id="appMinVer" placeholder="3.2" maxlength="12"></div>
+            </div>
+            <div class="field"><label for="appMinMsg">Message <span class="opt">(optional)</span></label><input type="text" id="appMinMsg" maxlength="300" placeholder="This update fixes a bug with Game Booster."></div>
+            <div class="admin-bar"><button class="btn btn-primary" id="appMinSave" type="button">Save</button></div>
+            <p class="admin-msg" id="appMinMsgOut"></p>
+          </div>
+          <div>
+            <h3 class="ctl-h">Feature switches</h3>
+            <p class="admin-msg">Turn a feature off everywhere if it causes problems. Users see "paused" instead.</p>
+            <div id="appFeatList" class="feat-list"><p class="admin-msg">Loading…</p></div>
+            <p class="admin-msg" id="appFeatMsg"></p>
+          </div>
+        </div>
+      </section>
 
       <section class="admin-block">
         <h2>Overview</h2>
@@ -279,6 +304,6 @@
     </div>
   </div>
 </main>
-<script src="assets/admin.js?v=7"></script>
+<script src="assets/admin.js?v=8"></script>
 </body>
 </html>

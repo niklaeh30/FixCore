@@ -463,6 +463,39 @@
     }
   });
 
+  // ---------- desktop app control ----------
+  function drawAppCfg(d){
+    if (document.activeElement !== document.getElementById('appMinVer')) document.getElementById('appMinVer').value = d.min_version || '';
+    if (document.activeElement !== document.getElementById('appMinMsg')) document.getElementById('appMinMsg').value = d.message || '';
+    document.getElementById('appFeatList').innerHTML = (d.features || []).map(function(f){
+      return '<div class="feat' + (f.on ? '' : ' off') + '"><span>' + esc(f.label) + (f.on ? '' : ' \u2014 OFF') + '</span>' +
+        '<button type="button" class="sw' + (f.on ? ' on' : '') + '" role="switch" aria-checked="' + f.on + '" aria-label="' + esc(f.label) + '" data-appfeat="' + esc(f.key) + '"></button></div>';
+    }).join('');
+  }
+  function loadAppCfg(){ api('/api/admin/app-config?app=ultimate').then(function(r){ if (r.ok) drawAppCfg(r.d); }); }
+  document.getElementById('appMinSave').addEventListener('click', function(){
+    var m = document.getElementById('appMinMsgOut'), v = document.getElementById('appMinVer').value.trim();
+    if (v && !window.confirm('Make everyone below ' + v + ' update before they can use FixCore?\n\nOnly do this when the ' + v + ' installer is already uploaded.')) return;
+    m.textContent = 'Saving…';
+    post('/api/admin/app-config', { app: 'ultimate', min_version: v, message: document.getElementById('appMinMsg').value }).then(function(r){
+      if (!r.ok){ m.textContent = (r.d && r.d.error) || 'Could not save.'; return; }
+      drawAppCfg(r.d);
+      m.textContent = v ? 'Saved. Everyone below ' + v + ' must update.' : 'Saved. No version is required.';
+    });
+  });
+  document.getElementById('appFeatList').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-appfeat]');
+    if (!b) return;
+    var on = !b.classList.contains('on'), m = document.getElementById('appFeatMsg'), label = b.getAttribute('aria-label');
+    if (!on && !window.confirm('Turn OFF "' + label + '" in every copy of FixCore Ultimate?')) return;
+    b.disabled = true;
+    post('/api/admin/app-config', { app: 'ultimate', feature: b.getAttribute('data-appfeat'), on: on }).then(function(r){
+      if (!r.ok){ b.disabled = false; m.textContent = (r.d && r.d.error) || 'Could not change it.'; return; }
+      drawAppCfg(r.d);
+      m.textContent = label + ' is ' + (on ? 'on' : 'OFF') + ' for everyone (within 10 minutes).';
+    });
+  });
+
   // ---------- emergency shutdown ----------
   function sinceText(iso){
     var t = new Date(iso).getTime();
@@ -694,7 +727,7 @@
       });
       gate.hidden = true; app.hidden = false;
       loadOverview(); loadPayouts(); loadAccounts(); loadSales();
-      loadEmergency(); loadFeatures(); loadBanner(); loadStats(); loadAlerts(); startStatus(); loadOrders(); loadPromos(); loadNewsletterCounts();
+      loadEmergency(); loadAppCfg(); loadFeatures(); loadBanner(); loadStats(); loadAlerts(); startStatus(); loadOrders(); loadPromos(); loadNewsletterCounts();
       return;
     }
     var code = r.d && r.d.code;
