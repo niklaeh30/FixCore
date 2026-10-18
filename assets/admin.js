@@ -556,7 +556,10 @@
         return '<tr><td><b>' + esc(o.name) + '</b>' + (o.os ? '<br><small class="muted">' + esc(o.os) + '</small>' : '') + '</td>' +
           '<td><span class="app-tag ' + esc(o.app) + '">' + esc(o.appName) + '</span></td><td>' + esc(o.version || '?') + '</td>' +
           '<td>' + esc(pageName(o.page)) + '</td><td>' + esc(ago(o.since)) + '</td>' +
-          '<td><button type="button" class="btn btn-ghost btn-sm" data-kick="' + esc(o.session) + '" data-name="' + esc(o.name) + '">Sign out</button></td></tr>';
+          '<td><div class="kick-cell"><select aria-label="How long" data-for="' + esc(o.session) + '">' +
+          '<option value="0">Just sign out</option><option value="60">Block 1 hour</option><option value="1440">Block 1 day</option>' +
+          '<option value="10080">Block 7 days</option><option value="43200">Block 30 days</option><option value="-1">Block until I let them back</option></select>' +
+          '<button type="button" class="btn btn-ghost btn-sm" data-kick="' + esc(o.session) + '" data-name="' + esc(o.name) + '">Sign out</button></div></td></tr>';
       }).join('') : '<tr><td colspan="6" class="admin-msg">Nobody has a FixCore app open right now.</td></tr>';
     });
   }
@@ -584,14 +587,46 @@
     var b = e.target.closest('button[data-kick]');
     if (!b) return;
     var name = b.getAttribute('data-name'), m = document.getElementById('appsMsg');
-    if (!window.confirm('Sign ' + name + ' out of the app now?\n\nTheir tweaks stay. They can sign in again.')) return;
+    var sel = b.parentNode.querySelector('select'), minutes = parseInt(sel ? sel.value : '0', 10);
+    var what = sel ? sel.options[sel.selectedIndex].text.toLowerCase() : 'just sign out';
+    var question = minutes ? 'Sign out ' + name + ' and ' + what + '?\n\nTheir tweaks stay. Until the block ends they are signed out again if they open FixCore.'
+                           : 'Sign ' + name + ' out of the app now?\n\nTheir tweaks stay. They can sign in again.';
+    if (!window.confirm(question)) return;
     b.disabled = true;
-    post('/api/admin/apps-kick', { session: b.getAttribute('data-kick'), name: name }).then(function(r){
-      m.textContent = r.ok ? name + ' will be signed out within a minute.' : ((r.d && r.d.error) || 'Could not sign them out.');
-      loadAppsLive();
+    post('/api/admin/apps-kick', { session: b.getAttribute('data-kick'), name: name, minutes: minutes }).then(function(r){
+      m.textContent = r.ok ? name + (minutes ? ' is blocked (' + what.replace('block ', '') + ') and signed out within a minute.' : ' will be signed out within a minute.')
+                           : ((r.d && r.d.error) || 'Could not sign them out.');
+      loadAppsLive(); loadBans();
     });
   });
-  setInterval(function(){ if (!document.hidden) loadAppsLive(); }, 15000);
+  function untilText(iso){
+    if (!iso) return 'Until you let them back';
+    var d = new Date(iso);
+    return d.toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+  function loadBans(){
+    api('/api/admin/apps-bans').then(function(r){
+      var body = document.getElementById('bansBody');
+      if (!r.ok){ body.innerHTML = '<tr><td colspan="5" class="admin-msg">' + esc((r.d && r.d.error) || 'Could not load.') + '</td></tr>'; return; }
+      var bans = r.d.bans || [];
+      body.innerHTML = bans.length ? bans.map(function(x){
+        return '<tr><td><b>' + esc(x.name) + '</b>' + (x.discordId ? '<br><small class="muted">' + esc(x.discordId) + '</small>' : '') + '</td>' +
+          '<td>' + esc(untilText(x.until)) + '</td><td>' + esc(ago(x.since) === 'just now' ? 'just now' : ago(x.since) + ' ago') + '</td><td>' + esc(x.by || '—') + '</td>' +
+          '<td><button type="button" class="btn btn-ghost btn-sm" data-unban="' + esc(x.id) + '" data-name="' + esc(x.name) + '">Let back in</button></td></tr>';
+      }).join('') : '<tr><td colspan="5" class="admin-msg">Nobody is blocked.</td></tr>';
+    });
+  }
+  document.getElementById('bansBody').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-unban]');
+    if (!b) return;
+    var name = b.getAttribute('data-name'), m = document.getElementById('bansMsg');
+    b.disabled = true;
+    post('/api/admin/apps-bans', { id: parseInt(b.getAttribute('data-unban'), 10), name: name }).then(function(r){
+      m.textContent = r.ok ? name + ' can use FixCore again.' : ((r.d && r.d.error) || 'Could not change it.');
+      loadBans();
+    });
+  });
+  setInterval(function(){ if (!document.hidden){ loadAppsLive(); loadBans(); } }, 15000);
 
   // ---------- emergency shutdown ----------
   function sinceText(iso){
@@ -824,7 +859,7 @@
       });
       gate.hidden = true; app.hidden = false;
       loadOverview(); loadPayouts(); loadAccounts(); loadSales();
-      loadEmergency(); loadAppCfg(); loadAppsLive(); loadAppsUsage(); loadFeatures(); loadBanner(); loadStats(); loadAlerts(); startStatus(); loadOrders(); loadPromos(); loadNewsletterCounts();
+      loadEmergency(); loadAppCfg(); loadAppsLive(); loadAppsUsage(); loadBans(); loadFeatures(); loadBanner(); loadStats(); loadAlerts(); startStatus(); loadOrders(); loadPromos(); loadNewsletterCounts();
       return;
     }
     var code = r.d && r.d.code;

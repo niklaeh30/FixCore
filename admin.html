@@ -67,6 +67,8 @@
 .app-tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;}
 .app-tag.ultimate{background:rgba(168,85,247,.16);color:#d8b4fe;}
 .app-tag.fixcore21{background:rgba(0,196,255,.14);color:#9be7ff;}
+.kick-cell{display:flex;gap:6px;justify-content:flex-end;align-items:center;}
+.kick-cell select{padding:6px 8px;border-radius:8px;background:var(--surface,#0b0b16);color:var(--text);border:1px solid var(--line-2,#2a2a40);font-size:12px;}
 .ctl-h{font-size:15px;margin:0 0 6px;}
 .emg{border:1px solid rgba(255,59,92,.45);border-radius:var(--r-lg);padding:24px;background:linear-gradient(180deg,rgba(255,59,92,.09),rgba(255,59,92,.02));}
 .emg-head{display:flex;gap:14px;align-items:center;margin-bottom:14px;}
@@ -227,6 +229,16 @@
         <div id="appsPages" class="apps-pages"></div>
       </section>
 
+      <section class="admin-block" id="appsBansBlock">
+        <h2>Blocked from the apps</h2>
+        <p>People you signed out with a time limit or for good. They're signed out again straight away if they try to open FixCore. Blocks end by themselves when the time is up.</p>
+        <div class="table-wrap"><table class="admin-table">
+          <thead><tr><th>User</th><th>Blocked until</th><th>Since</th><th>By</th><th></th></tr></thead>
+          <tbody id="bansBody"><tr><td colspan="5" class="admin-msg">Loading…</td></tr></tbody>
+        </table></div>
+        <p class="admin-msg" id="bansMsg"></p>
+      </section>
+
       <section class="admin-block">
         <h2>Overview</h2>
         <div class="admin-stats" id="adminStats"></div>
@@ -345,6 +357,6 @@
     </div>
   </div>
 </main>
-<script src="assets/admin.js?v=11"></script>
+<script src="assets/admin.js?v=12"></script>
 </body>
 </html>
