@@ -529,6 +529,70 @@
     });
   });
 
+  // ---------- apps right now (FixCore 2.1 + Ultimate) ----------
+  var PAGE_NAMES = { dashboard: 'Home', general_tweaks: 'General', potato_graphics: 'Graphics', process_tweaks: 'Processes',
+    gaming_check: 'Gaming Checklist', auto_game_mode: 'Auto Game Mode', dns_test: 'DNS Test', share_setup: 'Share Setup',
+    startup_apps: 'Startup Apps', system_restore: 'System Restore', game_boost: 'Game Boost', game_profiles: 'Game Profiles',
+    safe_secure: 'Safe & Secure', pc_scan: 'PC Scan' };
+  function pageName(p){ return PAGE_NAMES[p] || (p ? p.charAt(0).toUpperCase() + p.slice(1).replace(/_/g, ' ') : '—'); }
+  function ago(iso){
+    var s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 90) return 'just now';
+    if (s < 3600) return Math.round(s / 60) + ' min';
+    return Math.floor(s / 3600) + ' h ' + Math.round((s % 3600) / 60) + ' min';
+  }
+  function loadAppsLive(){
+    api('/api/admin/apps-live').then(function(r){
+      if (!r.ok){ document.getElementById('appsBody').innerHTML = '<tr><td colspan="6" class="admin-msg">' + esc((r.d && r.d.error) || 'Could not load.') + '</td></tr>'; return; }
+      var d = r.d, c = d.counts || {};
+      var vers = function(app){ var v = (d.versions || {})[app] || {}; return Object.keys(v).map(function(k){ return 'v' + k + ': ' + v[k]; }).join(', ') || '—'; };
+      document.getElementById('appsTotals').innerHTML = [
+        ['Online now', (c.fixcore21 || 0) + (c.ultimate || 0), ''],
+        ['FixCore 2.1', c.fixcore21 || 0, vers('fixcore21')],
+        ['FixCore Ultimate', c.ultimate || 0, vers('ultimate')]
+      ].map(function(x){ return '<div class="stat-total"><b>' + esc(x[1]) + '</b><small>' + esc(x[0]) + (x[2] ? ' \u00b7 ' + esc(x[2]) : '') + '</small></div>'; }).join('');
+      var rows = d.online || [];
+      document.getElementById('appsBody').innerHTML = rows.length ? rows.map(function(o){
+        return '<tr><td><b>' + esc(o.name) + '</b>' + (o.os ? '<br><small class="muted">' + esc(o.os) + '</small>' : '') + '</td>' +
+          '<td><span class="app-tag ' + esc(o.app) + '">' + esc(o.appName) + '</span></td><td>' + esc(o.version || '?') + '</td>' +
+          '<td>' + esc(pageName(o.page)) + '</td><td>' + esc(ago(o.since)) + '</td>' +
+          '<td><button type="button" class="btn btn-ghost btn-sm" data-kick="' + esc(o.session) + '" data-name="' + esc(o.name) + '">Sign out</button></td></tr>';
+      }).join('') : '<tr><td colspan="6" class="admin-msg">Nobody has a FixCore app open right now.</td></tr>';
+    });
+  }
+  function loadAppsUsage(){
+    api('/api/admin/apps-usage?days=' + document.getElementById('appsDays').value).then(function(r){
+      if (!r.ok) return;
+      var rows = r.d.days || [];
+      document.getElementById('appsCharts').innerHTML =
+        chart('Daily users - FixCore Ultimate', rows, 'ultimate', { color: '#a855f7' }) +
+        chart('Daily users - FixCore 2.1', rows, 'fixcore21');
+      var html = '';
+      [['ultimate', 'Most used pages - Ultimate'], ['fixcore21', 'Most used pages - FixCore 2.1']].forEach(function(a){
+        var list = ((r.d.pages || {})[a[0]] || []).slice(0, 10);
+        if (!list.length) return;
+        var max = list[0].opens || 1;
+        html += '<div class="chart"><h3>' + esc(a[1]) + '<small>' + esc((r.d.users || {})[a[0]] || 0) + ' users</small></h3>' +
+          list.map(function(p){ return '<div class="page-row"><span>' + esc(pageName(p.page)) + '</span><span class="pbar"><i style="width:' +
+            Math.round(p.opens / max * 100) + '%"></i></span><b>' + esc(p.opens) + '</b></div>'; }).join('') + '</div>';
+      });
+      document.getElementById('appsPages').innerHTML = html;
+    });
+  }
+  document.getElementById('appsDays').addEventListener('change', loadAppsUsage);
+  document.getElementById('appsBody').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-kick]');
+    if (!b) return;
+    var name = b.getAttribute('data-name'), m = document.getElementById('appsMsg');
+    if (!window.confirm('Sign ' + name + ' out of the app now?\n\nTheir tweaks stay. They can sign in again.')) return;
+    b.disabled = true;
+    post('/api/admin/apps-kick', { session: b.getAttribute('data-kick'), name: name }).then(function(r){
+      m.textContent = r.ok ? name + ' will be signed out within a minute.' : ((r.d && r.d.error) || 'Could not sign them out.');
+      loadAppsLive();
+    });
+  });
+  setInterval(function(){ if (!document.hidden) loadAppsLive(); }, 15000);
+
   // ---------- emergency shutdown ----------
   function sinceText(iso){
     var t = new Date(iso).getTime();
@@ -760,7 +824,7 @@
       });
       gate.hidden = true; app.hidden = false;
       loadOverview(); loadPayouts(); loadAccounts(); loadSales();
-      loadEmergency(); loadAppCfg(); loadFeatures(); loadBanner(); loadStats(); loadAlerts(); startStatus(); loadOrders(); loadPromos(); loadNewsletterCounts();
+      loadEmergency(); loadAppCfg(); loadAppsLive(); loadAppsUsage(); loadFeatures(); loadBanner(); loadStats(); loadAlerts(); startStatus(); loadOrders(); loadPromos(); loadNewsletterCounts();
       return;
     }
     var code = r.d && r.d.code;

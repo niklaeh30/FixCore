@@ -55,6 +55,18 @@
 .note-add input{flex:1;height:40px;padding:0 12px;border-radius:var(--r-sm);border:1px solid var(--line-2);background:rgba(4,5,14,.6);color:var(--text);font:inherit;}
 .ctl-inner{margin:14px 0 0;}
 .feat-group{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);padding:14px 2px 4px;}
+.live-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#21c27a;box-shadow:0 0 0 0 rgba(33,194,122,.6);animation:livePulse 1.8s infinite;margin-left:8px;vertical-align:middle;}
+@keyframes livePulse{0%{box-shadow:0 0 0 0 rgba(33,194,122,.55)}70%{box-shadow:0 0 0 9px rgba(33,194,122,0)}100%{box-shadow:0 0 0 0 rgba(33,194,122,0)}}
+.apps-pages{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:18px;}
+.apps-pages h3{font-size:15px;margin:0 0 8px;}
+.page-row{display:flex;align-items:center;gap:10px;font-size:13px;margin:6px 0;}
+.page-row span:first-child{width:140px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.page-row .pbar{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden;}
+.page-row .pbar i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),#a855f7);}
+.page-row b{width:44px;text-align:right;font-weight:600;}
+.app-tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;}
+.app-tag.ultimate{background:rgba(168,85,247,.16);color:#d8b4fe;}
+.app-tag.fixcore21{background:rgba(0,196,255,.14);color:#9be7ff;}
 .ctl-h{font-size:15px;margin:0 0 6px;}
 .emg{border:1px solid rgba(255,59,92,.45);border-radius:var(--r-lg);padding:24px;background:linear-gradient(180deg,rgba(255,59,92,.09),rgba(255,59,92,.02));}
 .emg-head{display:flex;gap:14px;align-items:center;margin-bottom:14px;}
@@ -199,6 +211,22 @@
         </div>
       </section>
 
+      <section class="admin-block" id="appsLiveBlock">
+        <div class="admin-block-head">
+          <h2>Apps right now <span class="live-dot" aria-hidden="true"></span></h2>
+          <select id="appsDays" aria-label="Usage period"><option value="7">Usage: 7 days</option><option value="30" selected>Usage: 30 days</option><option value="90">Usage: 90 days</option></select>
+        </div>
+        <p>Who has FixCore 2.1 or FixCore Ultimate open (updates every 15 seconds), daily users and the most used pages.</p>
+        <div class="stat-totals" id="appsTotals"></div>
+        <div class="table-wrap"><table class="admin-table">
+          <thead><tr><th>User</th><th>App</th><th>Version</th><th>Page</th><th>Open since</th><th></th></tr></thead>
+          <tbody id="appsBody"><tr><td colspan="6" class="admin-msg">Loading…</td></tr></tbody>
+        </table></div>
+        <p class="admin-msg" id="appsMsg"></p>
+        <div class="stat-charts" id="appsCharts"></div>
+        <div id="appsPages" class="apps-pages"></div>
+      </section>
+
       <section class="admin-block">
         <h2>Overview</h2>
         <div class="admin-stats" id="adminStats"></div>
@@ -317,6 +345,6 @@
     </div>
   </div>
 </main>
-<script src="assets/admin.js?v=10"></script>
+<script src="assets/admin.js?v=11"></script>
 </body>
 </html>
